@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { StorySettings, AspectRatio, ImageStyle, TextModel, ImageModel, VideoModel, ImageSize } from "../types";
+import { StorySettings, AspectRatio, ImageStyle, TextModel, ImageModel, VideoModel, ImageSize, Language } from "../types";
 import { 
   Sparkles, BookOpen, BrainCircuit, Image as ImageIcon, Video, Settings2, Lightbulb, ChevronRight, 
   Monitor, Smartphone, Clapperboard, Moon, Ghost, CloudSun, Box, Zap, Droplets, Feather, 
   Palette, Star, Grid3x3, PenTool, Cuboid, Skull, CircleDot, Aperture, ChevronDown, Wand2,
-  Cpu
+  Cpu, Languages
 } from "lucide-react";
 // @ts-ignore
 import ReactMarkdown from "react-markdown";
@@ -61,6 +61,11 @@ const IMAGE_MODELS: {value: ImageModel; label: string}[] = [
 const VIDEO_MODELS: {value: VideoModel; label: string}[] = [
     { value: "veo-3.1-fast-generate-preview", label: "Veo 3.1 Fast" },
     { value: "veo-3.1-generate-preview", label: "Veo 3.1 HQ" },
+];
+
+const LANGUAGES: {value: Language; label: string}[] = [
+    { value: "Chinese", label: "中文 (Chinese)" },
+    { value: "English", label: "英文 (English)" },
 ];
 
 export const Step1Input: React.FC<Props> = ({ 
@@ -295,6 +300,20 @@ export const Step1Input: React.FC<Props> = ({
                     </h3>
                     
                     <div className="space-y-6">
+                        {/* Language Selection */}
+                         <div className="flex flex-col gap-2">
+                            <label className="text-base font-bold text-slate-300 flex items-center gap-2">
+                                <Languages size={20} className="text-slate-400"/> 配音/对话语种
+                            </label>
+                            <select
+                                className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-base text-slate-300 outline-none"
+                                value={settings.language}
+                                onChange={(e) => setSettings({...settings, language: e.target.value as Language})}
+                            >
+                                {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                            </select>
+                        </div>
+
                         {/* Text */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-3 mb-1">

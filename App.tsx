@@ -58,7 +58,7 @@ export default function App() {
           const result = await getStorySuggestions(
               state.settings.storyText, 
               state.settings.sceneCount, 
-              state.settings.style,
+              state.settings.style, 
               state.settings.textModel
           );
           
@@ -83,8 +83,12 @@ export default function App() {
     setState(prev => ({ ...prev, isAnalyzing: true }));
     setError(null);
     try {
-      // Pass selected text model
-      const charactersRaw = await analyzeCharacters(state.settings.storyText, state.settings.textModel);
+      // Pass selected text model and language
+      const charactersRaw = await analyzeCharacters(
+          state.settings.storyText, 
+          state.settings.textModel,
+          state.settings.language
+      );
       
       // Initialize characters
       // If autoGenerateChars is true, set isLoading to true initially
@@ -123,6 +127,14 @@ export default function App() {
       setError(e.message || "故事分析失败");
       setState(prev => ({ ...prev, isAnalyzing: false }));
     }
+  };
+
+  // Step Navigation Logic
+  const handleBack = () => {
+    setState(prev => {
+        const prevStep = Math.max(1, prev.step - 1) as 1 | 2 | 3 | 4;
+        return { ...prev, step: prevStep };
+    });
   };
 
   // Step 2 Actions
@@ -182,8 +194,18 @@ export default function App() {
   const handleGoToScenes = async () => {
     setState(prev => ({ ...prev, isAnalyzing: true }));
     try {
-        // Pass selected text model
-        const scenes = await breakdownScenes(state.settings.storyText, state.settings.sceneCount, state.characters, state.settings.textModel);
+        // Pass selected text model and language
+        // Only generate scenes if they are empty (to prevent overwriting if user goes back and forth, 
+        // unless you want to force regeneration. For now, we regenerate to ensure consistency with char edits).
+        // Actually, users might want to keep scenes if they just went back to check something.
+        // Let's ALWAYS regenerate for now to capture character changes, but maybe in future cache it.
+        const scenes = await breakdownScenes(
+            state.settings.storyText, 
+            state.settings.sceneCount, 
+            state.characters, 
+            state.settings.textModel,
+            state.settings.language
+        );
         setState(prev => ({
             ...prev,
             scenes,
@@ -302,9 +324,15 @@ export default function App() {
             state.step === s.num 
               ? "bg-blue-600 text-white shadow-xl shadow-blue-900/40 scale-105" 
               : state.step > s.num 
-                ? "bg-slate-800 text-green-400 border border-slate-700 hover:bg-slate-750" 
+                ? "bg-slate-800 text-green-400 border border-slate-700 hover:bg-slate-750 cursor-pointer" // Enable clicking previous steps
                 : "bg-slate-900/50 text-slate-500 border border-slate-800"
           }`}
+          onClick={() => {
+              // Allow jumping back
+              if(state.step > s.num) {
+                  setState(prev => ({...prev, step: s.num as any}));
+              }
+          }}
         >
           <s.icon size={20} /> <span className="hidden sm:inline">{s.label}</span>
         </div>
@@ -427,6 +455,7 @@ export default function App() {
                     generateImage={handleGenerateCharacterImage}
                     generateAllImages={handleGenerateAllCharacterImages}
                     onNext={handleGoToScenes}
+                    onBack={handleBack}
                     isLoadingNext={state.isAnalyzing}
                 />
                 )}
@@ -441,6 +470,7 @@ export default function App() {
                         generateAllImages={handleGenerateAllSceneImages}
                         generateAllVideos={handleGenerateAllSceneVideos}
                         onNext={() => setState(prev => ({ ...prev, step: 4 }))}
+                        onBack={handleBack}
                     />
                 )}
 
@@ -450,6 +480,7 @@ export default function App() {
                         characters={state.characters}
                         settings={state.settings}
                         analysisSuggestion={state.analysisSuggestion}
+                        onBack={handleBack}
                     />
                 )}
             </div>

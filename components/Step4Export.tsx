@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Scene, Character, StorySettings } from "../types";
-import { Download, CheckCircle, Package } from "lucide-react";
+import { Download, CheckCircle, Package, ChevronLeft } from "lucide-react";
 // @ts-ignore - Importing from CDN in ESM
 import JSZip from "jszip"; 
 
@@ -9,9 +9,10 @@ interface Props {
   characters: Character[];
   settings: StorySettings;
   analysisSuggestion: string; // Add analysis suggestion prop
+  onBack: () => void; // New Prop
 }
 
-export const Step4Export: React.FC<Props> = ({ scenes, characters, settings, analysisSuggestion }) => {
+export const Step4Export: React.FC<Props> = ({ scenes, characters, settings, analysisSuggestion, onBack }) => {
   const [isZipping, setIsZipping] = useState(false);
 
   const handleDownload = async () => {
@@ -88,6 +89,7 @@ ${c.visualPrompt}
 对白: ${s.dialogue}
 动作类型: ${s.action}
 镜头/景别: ${s.camera}
+转场/衔接建议: ${s.transition || "无"}
 音效/音乐提示 (Sound Prompt): ${s.soundPrompt || "N/A"}
 
 视觉提示词 (Image Prompt):
@@ -190,28 +192,37 @@ ${s.characters?.join(", ") || "未指定"}
           </div>
 
           <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 flex flex-col justify-center items-center gap-8 shadow-xl">
-              <p className="text-center text-slate-400 text-lg">
-                  下载 ZIP 压缩包。<br/>
-                  <span className="text-sm text-slate-500 mt-2 block">
-                    包含完整的故事梗概、角色设定文档与参考图、以及所有分镜的脚本与视觉图（含视频）。
-                  </span>
-              </p>
-              <button
-                onClick={handleDownload}
-                disabled={isZipping}
-                className="w-full py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold text-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-3 transform transition-all active:scale-95"
-              >
-                {isZipping ? (
-                    <>
-                        <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></span>
-                        打包中...
-                    </>
-                ) : (
-                    <>
-                        <Download size={28} /> 下载项目包
-                    </>
-                )}
-              </button>
+              <div className="text-center w-full space-y-4">
+                  <p className="text-center text-slate-400 text-lg">
+                      下载 ZIP 压缩包。<br/>
+                      <span className="text-sm text-slate-500 mt-2 block">
+                        包含完整的故事梗概、角色设定文档与参考图、以及所有分镜的脚本与视觉图（含视频）。
+                      </span>
+                  </p>
+                  <button
+                    onClick={handleDownload}
+                    disabled={isZipping}
+                    className="w-full py-5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl font-bold text-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-3 transform transition-all active:scale-95"
+                  >
+                    {isZipping ? (
+                        <>
+                            <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></span>
+                            打包中...
+                        </>
+                    ) : (
+                        <>
+                            <Download size={28} /> 下载项目包
+                        </>
+                    )}
+                  </button>
+                  
+                   <button 
+                    onClick={onBack}
+                    className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                      <ChevronLeft size={20} /> 返回修改
+                  </button>
+              </div>
           </div>
       </div>
     </div>

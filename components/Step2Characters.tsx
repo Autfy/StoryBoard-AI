@@ -1,6 +1,6 @@
 import React from "react";
 import { Character, StorySettings } from "../types";
-import { RefreshCw, User, Wand2, ChevronRight, Upload, Mic, Zap } from "lucide-react";
+import { RefreshCw, User, Wand2, ChevronRight, Upload, Mic, Zap, ChevronLeft } from "lucide-react";
 
 interface Props {
   characters: Character[];
@@ -9,10 +9,15 @@ interface Props {
   generateImage: (id: string) => void;
   generateAllImages: () => void; // New Prop
   onNext: () => void;
+  onBack: () => void; // New Prop
   isLoadingNext: boolean;
 }
 
-export const Step2Characters: React.FC<Props> = ({ characters, settings, updateCharacter, generateImage, generateAllImages, onNext, isLoadingNext }) => {
+export const Step2Characters: React.FC<Props> = ({ characters, settings, updateCharacter, generateImage, generateAllImages, onNext, onBack, isLoadingNext }) => {
+  
+  // Determine aspect ratio class based on settings
+  const aspectClass = settings.aspectRatio === "9:16" ? "aspect-[9/16]" : "aspect-video";
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -21,6 +26,12 @@ export const Step2Characters: React.FC<Props> = ({ characters, settings, updateC
           <p className="text-slate-400 text-lg mt-1">审查生成的角色并创建参考图。</p>
         </div>
         <div className="flex gap-4">
+             <button
+                onClick={onBack}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-bold text-lg flex items-center gap-2 transition-colors shadow-lg"
+            >
+                <ChevronLeft size={20} /> 上一步
+            </button>
              <button
                 onClick={generateAllImages}
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg flex items-center gap-2 transition-colors shadow-lg"
@@ -40,7 +51,8 @@ export const Step2Characters: React.FC<Props> = ({ characters, settings, updateC
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-8">
         {characters.map((char) => (
           <div key={char.id} className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-lg flex flex-col">
-            <div className="relative aspect-square bg-slate-900 group">
+            {/* Dynamic Aspect Ratio Container */}
+            <div className={`relative ${aspectClass} bg-slate-900 group transition-all duration-300`}>
               {char.imageUrl ? (
                 <img src={char.imageUrl} alt={char.name} className="w-full h-full object-cover" />
               ) : (

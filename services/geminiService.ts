@@ -1,6 +1,7 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
-import { Character, Scene, StorySettings, ImageSize } from "../types";
+import { Character, Scene, StorySettings, ImageSize, Language } from "../types";
 
 // Initialize Gemini Client
 const getClient = () => {
@@ -90,7 +91,8 @@ export const getStorySuggestions = async (
 
 export const analyzeCharacters = async (
   story: string,
-  model: string = "gemini-2.5-flash"
+  model: string = "gemini-2.5-flash",
+  language: Language = "Chinese"
 ): Promise<Character[]> => {
   const ai = getClient();
   
@@ -98,9 +100,9 @@ export const analyzeCharacters = async (
   分析提供的故事并提取主要角色。
   对于每个角色，请提供：
   1. 姓名 (name)
-  2. 简短的性格和角色描述 (description，使用中文)。
-  3. 极其详细的视觉描述 (visualPrompt，使用中文)，用于AI绘画生成 (包含外貌、服装、关键特征)。
-  4. 说话/配音风格建议 (speakerStyle, 使用中文)，描述角色的声线特质和说话习惯（例如：语速快、沉稳低音、活泼高亢）。`;
+  2. 简短的性格和角色描述 (description，使用${language})。
+  3. 极其详细的视觉描述 (visualPrompt，使用${language})，用于AI绘画生成 (包含外貌、服装、关键特征)。
+  4. 说话/配音风格建议 (speakerStyle, 使用${language})，描述角色的声线特质和说话习惯（例如：语速快、沉稳低音、活泼高亢）。`;
 
   const response = await ai.models.generateContent({
     model: model,
@@ -114,9 +116,9 @@ export const analyzeCharacters = async (
           type: Type.OBJECT,
           properties: {
             name: { type: Type.STRING },
-            description: { type: Type.STRING, description: "性格和角色定位 (中文)" },
-            visualPrompt: { type: Type.STRING, description: "用于图像生成的详细外貌描写 (中文)" },
-            speakerStyle: { type: Type.STRING, description: "说话风格和声线建议 (中文)" },
+            description: { type: Type.STRING, description: `性格和角色定位 (${language})` },
+            visualPrompt: { type: Type.STRING, description: `用于图像生成的详细外貌描写 (${language})` },
+            speakerStyle: { type: Type.STRING, description: `说话风格和声线建议 (${language})` },
           },
           required: ["name", "description", "visualPrompt", "speakerStyle"],
         },
@@ -131,7 +133,7 @@ export const analyzeCharacters = async (
     name: char.name,
     description: char.description,
     visualPrompt: char.visualPrompt,
-    speakerStyle: char.speakerStyle || "标准声线",
+    speakerStyle: char.speakerStyle || "Standard Voice",
   }));
 };
 
@@ -215,7 +217,8 @@ export const breakdownScenes = async (
   story: string,
   sceneCount: number,
   characters: Character[],
-  model: string = "gemini-2.5-flash"
+  model: string = "gemini-2.5-flash",
+  language: Language = "Chinese"
 ): Promise<Scene[]> => {
   const ai = getClient();
 
@@ -232,14 +235,15 @@ export const breakdownScenes = async (
   2. 场景的 "visualPrompt" 必须再次详细描述角色的穿着和外貌，不要只写名字。
   
   **其他要求**:
-  1. 所有输出内容必须使用中文 (visualPrompt, videoPrompt 除外)。
-  2. **videoPrompt (英文)**: 专用于生成视频。必须专注于**视觉动作**和**运镜**。
+  1. **所有输出内容（对白、描述、镜头、转场）必须使用${language}** (visualPrompt, videoPrompt 除外)。
+  2. **videoPrompt (English)**: 专用于生成视频。必须专注于**视觉动作**和**运镜**。
      *   **重要**: 将角色的 "SPEAKER_STYLE" (说话风格) 转化为**视觉化的表演指令**。
      *   例如：如果 SPEAKER_STYLE 是 "aggressive/shouting"，videoPrompt 应包含 "angry facial expression, gesturing wildly"。
      *   如果 SPEAKER_STYLE 是 "shy/whispering"，videoPrompt 应包含 "looking down, subtle movements"。
      *   不要包含对白文本，只描述动作。
-  3. **soundPrompt (中文)**: 描述该场景的音效 (SFX) 和背景音乐氛围。
-  4. **estimatedDuration**: 估计该镜头在成片中的时长 (如 "5s")。
+  3. **soundPrompt (${language})**: 描述该场景的音效 (SFX) 和背景音乐氛围。
+  4. **transition (${language})**: 建议该场景**结束时**连接到下一个场景的转场方式（例如：硬切 Cut、叠化 Dissolve、淡出 Fade out、匹配剪辑 Match Cut、甩镜头 Whip Pan 等），目的是让视频拼接不突兀，流畅自然。
+  5. **estimatedDuration**: 估计该镜头在成片中的时长 (如 "5s")。
   
   角色档案:
   ${characterContext}
@@ -257,13 +261,14 @@ export const breakdownScenes = async (
           type: Type.OBJECT,
           properties: {
             number: { type: Type.INTEGER },
-            description: { type: Type.STRING, description: "场景发生的动作描述 (中文)" },
-            dialogue: { type: Type.STRING, description: "关键对白或'无对白' (中文)" },
+            description: { type: Type.STRING, description: `场景发生的动作描述 (${language})` },
+            dialogue: { type: Type.STRING, description: `关键对白或'无对白' (${language})` },
             action: { type: Type.STRING, description: "动作类型摘要" },
-            camera: { type: Type.STRING, description: "镜头角度、景别 (如特写、广角) (中文)" },
-            visualPrompt: { type: Type.STRING, description: "用于生成图像的详细提示词 (中文)" },
+            camera: { type: Type.STRING, description: `镜头角度、景别 (如特写、广角) (${language})` },
+            visualPrompt: { type: Type.STRING, description: `用于生成图像的详细提示词 (${language})` },
             videoPrompt: { type: Type.STRING, description: "用于Veo生成的视频提示词 (English, Motion focused, based on speaker style)" },
-            soundPrompt: { type: Type.STRING, description: "音效与音乐提示词 (中文)" },
+            soundPrompt: { type: Type.STRING, description: `音效与音乐提示词 (${language})` },
+            transition: { type: Type.STRING, description: `到下一镜头的转场建议 (${language})` },
             estimatedDuration: { type: Type.STRING, description: "预估时长 e.g. '4s'" },
             characters: { 
                 type: Type.ARRAY, 
@@ -271,7 +276,7 @@ export const breakdownScenes = async (
                 description: "本场景中出现的角色名字列表 (必须与角色档案中的名字完全一致)" 
             }
           },
-          required: ["number", "description", "dialogue", "action", "camera", "visualPrompt", "videoPrompt", "soundPrompt", "estimatedDuration", "characters"],
+          required: ["number", "description", "dialogue", "action", "camera", "visualPrompt", "videoPrompt", "soundPrompt", "transition", "estimatedDuration", "characters"],
         },
       },
     },
@@ -343,11 +348,12 @@ export const generateSceneVideo = async (
   
   // Ensure prompt focuses on motion, not dialogue
   // Veo generates silent video. Dialogue in prompt might confuse it.
-  const prompt = scene.videoPrompt || `${scene.description}. Cinematic motion, slow motion, high quality.`;
+  // CRITICAL: Ensure we have some text to avoid empty prompt errors.
+  const prompt = (scene.videoPrompt && scene.videoPrompt.trim().length > 5) 
+    ? scene.videoPrompt 
+    : `${scene.description}. Cinematic motion, slow motion, high quality.`;
 
   // Veo strictly supports "16:9" or "9:16".
-  // Since we restricted inputs to only these two, we pass them directly.
-  // Fallback to 16:9 just in case of weird state.
   const veoRatio = settings.aspectRatio === "9:16" ? "9:16" : "16:9";
 
   // Use selected video model
@@ -368,26 +374,37 @@ export const generateSceneVideo = async (
   });
 
   // Polling loop
+  // Safety break counter to prevent infinite loops (e.g. max 120s)
+  let attempts = 0;
+  const maxAttempts = 24; // 24 * 5s = 2 minutes
+
   while (!operation.done) {
+    if (attempts >= maxAttempts) {
+        throw new Error("Video generation timed out (2 mins).");
+    }
     await new Promise(resolve => setTimeout(resolve, 5000));
+    // Pass the name property correctly if available, or the whole operation object
+    // The SDK expects { operation: string | Operation }
     operation = await ai.operations.getVideosOperation({operation: operation});
+    attempts++;
   }
 
   if (operation.error) {
-    const errorMsg = operation.error.message ? String(operation.error.message) : "Video generation failed";
+    const errorMsg = operation.error.message ? String(operation.error.message) : "Video generation failed with unknown error";
     throw new Error(errorMsg);
   }
 
   const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
   
   if (!downloadLink) {
-    throw new Error("No video URI returned");
+    console.error("Operation completed but no video URI:", JSON.stringify(operation, null, 2));
+    throw new Error("Video generation completed, but no video URI was returned. This may be due to safety filters blocking the output.");
   }
 
   // Fetch the actual video bytes
   const videoResponse = await fetch(`${downloadLink}&key=${apiKey}`);
   if (!videoResponse.ok) {
-    throw new Error("Failed to download video file");
+    throw new Error(`Failed to download video file: ${videoResponse.statusText}`);
   }
   
   const videoBlob = await videoResponse.blob();

@@ -22,12 +22,14 @@ export type TextModel = "gemini-2.5-flash" | "gemini-3-pro-preview";
 export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001";
 export type ImageSize = "1K" | "2K"; // New type for resolution control
 export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview";
+export type Language = "Chinese" | "English"; // New language type
 
 export interface StorySettings {
   storyText: string;
   style: ImageStyle;
   aspectRatio: AspectRatio;
   sceneCount: number;
+  language: Language; // New setting
   
   // Model Configuration
   textModel: TextModel;
@@ -70,6 +72,9 @@ export interface Scene {
   soundPrompt?: string; // Prompt for sound effects or background music
   estimatedDuration?: string; // Estimated duration in seconds (e.g., "5s")
   
+  // Transition
+  transition?: string; // Suggestion for transition to the next scene (e.g., Cut, Dissolve)
+
   // Video generation fields
   videoPrompt?: string; // Specific prompt for Veo
   videoUrl?: string;
@@ -90,6 +95,7 @@ export const INITIAL_SETTINGS: StorySettings = {
   style: "电影感",
   aspectRatio: "16:9",
   sceneCount: 8,
+  language: "Chinese", // Default language
   textModel: "gemini-3-pro-preview",
   imageModel: "gemini-3-pro-image-preview",
   imageSize: "1K", // Default to 1K to save cost
