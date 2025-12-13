@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Character, StorySettings } from "../types";
-import { RefreshCw, User, Wand2, ChevronRight, Upload, Mic, Zap, ChevronLeft } from "lucide-react";
+import { RefreshCw, User, Wand2, ChevronRight, Upload, Mic, Zap, ChevronLeft, Download, FileJson, Package } from "lucide-react";
+// @ts-ignore - Importing from CDN in ESM
+import JSZip from "jszip";
 
 interface Props {
   characters: Character[];
@@ -15,15 +17,101 @@ interface Props {
 
 export const Step2Characters: React.FC<Props> = ({ characters, settings, updateCharacter, generateImage, generateAllImages, onNext, onBack, isLoadingNext }) => {
   
+  // Track which character is currently exporting to show loading state
+  const [exportingId, setExportingId] = useState<string | null>(null);
+
   // Determine aspect ratio class based on settings
   const aspectClass = settings.aspectRatio === "9:16" ? "aspect-[9/16]" : "aspect-video";
+
+  // Export Character Package (ZIP) - Same format as Step 4
+  const handleExportCharacter = async (char: Character) => {
+    setExportingId(char.id);
+    try {
+        const zip = new JSZip();
+        const safeName = char.name.replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_") || "character";
+        
+        // 1. JSON Data (For reuse - Importable)
+        // This is the file users can upload back to "Import"
+        const jsonContent = JSON.stringify(char, null, 2);
+        zip.file(`${safeName}.json`, jsonContent);
+
+        // 2. Info Text (Readable)
+        const infoContent = `角色名称: ${char.name}
+
+角色描述 (特征):
+${char.description}
+
+说话/配音风格 (Speaker Style):
+${char.speakerStyle || "N/A"}
+
+视觉提示词 (Visual Prompt):
+${char.visualPrompt}
+`;
+        zip.file(`${safeName}_info.txt`, infoContent);
+
+        // 3. Image (PNG)
+        if (char.imageUrl) {
+            const base64Data = char.imageUrl.split(',')[1];
+            zip.file(`${safeName}_ref.png`, base64Data, { base64: true });
+        }
+
+        // Generate and Download
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${safeName}_character_pack.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Export failed", e);
+        alert("导出角色包失败");
+    } finally {
+        setExportingId(null);
+    }
+  };
+
+  // Import Character Data from JSON
+  const handleImportCharacter = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        // Validate basic structure
+        if (json.name && json.visualPrompt) {
+            // Keep the current ID to avoid key issues, update content
+            updateCharacter(id, {
+                name: json.name,
+                description: json.description,
+                visualPrompt: json.visualPrompt,
+                speakerStyle: json.speakerStyle,
+                imageUrl: json.imageUrl // This will load the base64 image if present
+            });
+            alert(`成功导入角色: ${json.name}`);
+        } else {
+            alert("文件格式不正确，缺少必要字段。");
+        }
+      } catch (err) {
+        console.error("Import failed", err);
+        alert("无法解析 JSON 文件。请确保上传的是 .json 数据文件。");
+      }
+    };
+    reader.readAsText(file);
+    // Reset value so same file can be selected again
+    e.target.value = '';
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-white">角色设计</h2>
-          <p className="text-slate-400 text-lg mt-1">审查生成的角色并创建参考图。</p>
+          <p className="text-slate-400 text-lg mt-1">审查生成的角色并创建参考图。支持导入/导出角色包以复用设定。</p>
         </div>
         <div className="flex gap-4">
              <button
@@ -51,6 +139,38 @@ export const Step2Characters: React.FC<Props> = ({ characters, settings, updateC
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-8">
         {characters.map((char) => (
           <div key={char.id} className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-lg flex flex-col">
+            
+            {/* Toolbar for Import/Export */}
+            <div className="bg-slate-900/50 p-2 flex justify-end gap-2 border-b border-slate-700">
+                <button 
+                    onClick={() => handleExportCharacter(char)}
+                    disabled={exportingId === char.id}
+                    className="p-1.5 text-slate-400 hover:text-green-400 hover:bg-slate-800 rounded-md transition-colors flex items-center gap-1"
+                    title="导出角色包 (ZIP)"
+                >
+                    {exportingId === char.id ? (
+                        <RefreshCw size={16} className="animate-spin text-green-500"/>
+                    ) : (
+                        <Package size={16} />
+                    )}
+                </button>
+                
+                <label 
+                    htmlFor={`import-${char.id}`}
+                    className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                    title="导入角色数据 (JSON)"
+                >
+                    <FileJson size={16} />
+                </label>
+                <input
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    id={`import-${char.id}`}
+                    onChange={(e) => handleImportCharacter(e, char.id)}
+                />
+            </div>
+
             {/* Dynamic Aspect Ratio Container */}
             <div className={`relative ${aspectClass} bg-slate-900 group transition-all duration-300`}>
               {char.imageUrl ? (
@@ -76,7 +196,7 @@ export const Step2Characters: React.FC<Props> = ({ characters, settings, updateC
                 <label 
                     htmlFor={`upload-${char.id}`}
                     className="bg-slate-700 text-white p-3 rounded-full hover:bg-slate-600 cursor-pointer transition-colors flex items-center justify-center"
-                    title="上传参考图"
+                    title="上传参考图 (仅图片)"
                 >
                     <Upload size={20} />
                 </label>

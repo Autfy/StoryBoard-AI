@@ -37,9 +37,14 @@ const SceneCard: React.FC<{
 
     const isVideoMode = viewMode === 'video';
     const isImageMode = viewMode === 'image';
-
-    // Determine aspect ratio class
-    const aspectClass = settings.aspectRatio === "9:16" ? "aspect-[9/16]" : "aspect-video";
+    
+    // Logic for Container Sizing based on Aspect Ratio
+    const isVertical = settings.aspectRatio === "9:16";
+    // If vertical: Fixed height (500px), width auto (narrower). 
+    // If horizontal: Width full, aspect-video (standard).
+    const mediaContainerClass = isVertical 
+        ? "h-[500px] w-auto aspect-[9/16]" 
+        : "w-full aspect-video";
 
     return (
         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-2xl flex flex-col lg:flex-row">
@@ -79,12 +84,12 @@ const SceneCard: React.FC<{
                     </div>
                 </div>
 
-                {/* Media Display Area */}
+                {/* Media Display Area - Flex centered for vertical adaptation */}
                 <div className="relative flex-1 min-h-[360px] flex items-center justify-center p-6 pt-2">
                     
                     {/* VIDEO VIEW */}
                     {isVideoMode && (
-                        <div className={`relative w-full ${aspectClass} group bg-black/50 rounded-lg flex items-center justify-center`}>
+                        <div className={`relative group bg-black/50 rounded-lg flex items-center justify-center ${mediaContainerClass}`}>
                             {scene.videoUrl ? (
                                 <video 
                                     src={scene.videoUrl} 
@@ -125,7 +130,7 @@ const SceneCard: React.FC<{
 
                     {/* IMAGE VIEW */}
                     {isImageMode && (
-                        <div className={`relative w-full ${aspectClass} group`}>
+                        <div className={`relative group ${mediaContainerClass}`}>
                              {scene.imageUrl ? (
                                 <img src={scene.imageUrl} alt={`Scene ${scene.number}`} className="w-full h-full object-contain rounded-lg shadow-md bg-slate-900" />
                             ) : (

@@ -46,12 +46,17 @@ ${characters.map(c => `- ${c.name}: ${c.description}`).join('\n')}
       `;
       zip.file("project_summary.md", storyContent);
 
-      // 2. Add Character Files (Images + Info)
+      // 2. Add Character Files (Images + Info + JSON Data)
       const charFolder = zip.folder("characters");
       characters.forEach((c) => {
         const safeName = c.name.replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_") || "character";
         
-        // Character Info Text File
+        // A. Character Data JSON (For Re-import/Reuse)
+        // This file allows users to import the character back into Step 2 later.
+        const charJsonContent = JSON.stringify(c, null, 2);
+        charFolder.file(`${safeName}.json`, charJsonContent);
+
+        // B. Character Info Text File (Readable)
         const charInfoContent = `角色名称: ${c.name}
 
 角色描述 (特征):
@@ -65,7 +70,7 @@ ${c.visualPrompt}
 `;
         charFolder.file(`${safeName}_info.txt`, charInfoContent);
 
-        // Character Image
+        // C. Character Image
         if (c.imageUrl) {
           const base64Data = c.imageUrl.split(',')[1];
           charFolder.file(`${safeName}_ref.png`, base64Data, { base64: true });
