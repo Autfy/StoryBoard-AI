@@ -1,11 +1,35 @@
 export type AspectRatio = "1:1" | "16:9" | "9:16" | "4:3" | "3:4";
-export type ImageStyle = "电影感" | "动漫" | "水彩" | "赛博朋克" | "像素风" | "线稿" | "3D渲染" | "油画";
+export type ImageStyle = 
+  | "电影感" 
+  | "动漫" 
+  | "吉卜力风格"
+  | "皮克斯3D"
+  | "赛博朋克" 
+  | "水彩" 
+  | "中国水墨"
+  | "油画" 
+  | "美漫风格"
+  | "像素风" 
+  | "线稿" 
+  | "3D渲染"
+  | "暗黑哥特"
+  | "黏土定格"
+  | "黑白电影";
+
+export type TextModel = "gemini-2.5-flash" | "gemini-3-pro-preview";
+export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001";
+export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview";
 
 export interface StorySettings {
   storyText: string;
   style: ImageStyle;
   aspectRatio: AspectRatio;
   sceneCount: number;
+  
+  // Model Configuration
+  textModel: TextModel;
+  imageModel: ImageModel;
+  videoModel: VideoModel;
 }
 
 export interface Character {
@@ -27,6 +51,18 @@ export interface Scene {
   visualPrompt: string; // Full prompt including character details
   imageUrl?: string;
   isLoading?: boolean;
+  
+  // Consistency fields
+  characters?: string[]; // List of character names appearing in this scene
+  
+  // Audio & Timing
+  soundPrompt?: string; // Prompt for sound effects or background music
+  estimatedDuration?: string; // Estimated duration in seconds (e.g., "5s")
+  
+  // Video generation fields
+  videoPrompt?: string; // Specific prompt for Veo
+  videoUrl?: string;
+  isVideoLoading?: boolean;
 }
 
 export interface AppState {
@@ -41,5 +77,8 @@ export const INITIAL_SETTINGS: StorySettings = {
   storyText: "",
   style: "电影感",
   aspectRatio: "16:9",
-  sceneCount: 4,
+  sceneCount: 8,
+  textModel: "gemini-3-pro-preview",
+  imageModel: "gemini-3-pro-image-preview",
+  videoModel: "veo-3.1-generate-preview"
 };

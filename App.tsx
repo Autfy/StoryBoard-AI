@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { AppState, INITIAL_SETTINGS, Character, Scene } from "./types";
-import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage } from "./services/geminiService";
+import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage, generateSceneVideo } from "./services/geminiService";
 import { Step1Input } from "./components/Step1Input";
 import { Step2Characters } from "./components/Step2Characters";
 import { Step3Scenes } from "./components/Step3Scenes";
@@ -23,7 +23,8 @@ export default function App() {
     setState(prev => ({ ...prev, isAnalyzing: true }));
     setError(null);
     try {
-      const charactersRaw = await analyzeCharacters(state.settings.storyText);
+      // Pass selected text model
+      const charactersRaw = await analyzeCharacters(state.settings.storyText, state.settings.textModel);
       
       // Initialize characters with loading state for auto-generation
       const characters = charactersRaw.map(c => ({ ...c, isLoading: true }));
@@ -37,7 +38,8 @@ export default function App() {
 
       // Trigger auto-generation for all characters in parallel
       characters.forEach(char => {
-         generateCharacterImage(char, state.settings.style, state.settings.aspectRatio)
+         // Pass selected image model
+         generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel)
             .then(url => {
                 setState(prev => ({
                     ...prev,
@@ -73,7 +75,7 @@ export default function App() {
 
     handleUpdateCharacter(id, { isLoading: true });
     try {
-      const imageUrl = await generateCharacterImage(char, state.settings.style, state.settings.aspectRatio);
+      const imageUrl = await generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel);
       handleUpdateCharacter(id, { imageUrl, isLoading: false });
     } catch (e) {
       console.error(e);
@@ -85,7 +87,8 @@ export default function App() {
   const handleGoToScenes = async () => {
     setState(prev => ({ ...prev, isAnalyzing: true }));
     try {
-        const scenes = await breakdownScenes(state.settings.storyText, state.settings.sceneCount, state.characters);
+        // Pass selected text model
+        const scenes = await breakdownScenes(state.settings.storyText, state.settings.sceneCount, state.characters, state.settings.textModel);
         setState(prev => ({
             ...prev,
             scenes,
@@ -113,13 +116,35 @@ export default function App() {
 
       handleUpdateScene(id, { isLoading: true });
       try {
-          const imageUrl = await generateSceneImage(scene, state.settings);
+          // Pass all characters to ensure consistency injection
+          const imageUrl = await generateSceneImage(scene, state.settings, state.characters);
           handleUpdateScene(id, { imageUrl, isLoading: false });
       } catch (e) {
           console.error(e);
           handleUpdateScene(id, { isLoading: false });
           alert("生成场景图片失败");
       }
+  };
+
+  const handleGenerateSceneVideo = async (id: string) => {
+    const scene = state.scenes.find(s => s.id === id);
+    if(!scene) return;
+    
+    if(!scene.imageUrl) {
+        alert("请先生成图片，Veo 将基于图片生成视频。");
+        return;
+    }
+
+    handleUpdateScene(id, { isVideoLoading: true });
+    try {
+        // generateSceneVideo uses settings.videoModel inside
+        const videoUrl = await generateSceneVideo(scene, state.settings);
+        handleUpdateScene(id, { videoUrl, isVideoLoading: false });
+    } catch (e: any) {
+        console.error("Video generation error:", e);
+        handleUpdateScene(id, { isVideoLoading: false });
+        alert(`视频生成失败: ${e.message || "未知错误"}`);
+    }
   };
 
   const handleGenerateAllSceneImages = async () => {
@@ -132,7 +157,7 @@ export default function App() {
 
       for (const scene of scenesToGen) {
           try {
-             const imageUrl = await generateSceneImage(scene, state.settings);
+             const imageUrl = await generateSceneImage(scene, state.settings, state.characters);
              handleUpdateScene(scene.id, { imageUrl, isLoading: false });
           } catch (e) {
               console.error(`Failed scene ${scene.number}`, e);
@@ -143,7 +168,7 @@ export default function App() {
 
   // Steps indicator component
   const Steps = () => (
-    <div className="flex justify-center mb-8 gap-4 text-sm font-medium">
+    <div className="flex justify-center mb-8 gap-4 text-base font-medium">
       {[
         { num: 1, label: "故事", icon: Layers },
         { num: 2, label: "角色", icon: Users },
@@ -152,15 +177,15 @@ export default function App() {
       ].map((s) => (
         <div 
           key={s.num} 
-          className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full transition-colors ${
             state.step === s.num 
-              ? "bg-blue-600 text-white" 
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
               : state.step > s.num 
-                ? "bg-slate-800 text-green-400" 
-                : "bg-slate-900 text-slate-600"
+                ? "bg-slate-800 text-green-400 border border-slate-700" 
+                : "bg-slate-900 text-slate-500 border border-slate-800"
           }`}
         >
-          <s.icon size={16} /> <span className="hidden sm:inline">{s.label}</span>
+          <s.icon size={18} /> <span className="hidden sm:inline">{s.label}</span>
         </div>
       ))}
     </div>
@@ -170,12 +195,14 @@ export default function App() {
     <div className="min-h-screen bg-[#0f172a] text-slate-100">
       <header className="border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur-md sticky top-0 z-10">
         <div className="w-full px-4 md:px-8 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
-                <Film className="text-blue-500" /> StoryBoard AI
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-3">
+                <Film className="text-blue-500" size={28} /> StoryBoard AI
             </h1>
             {state.settings.style !== "电影感" && (
-                <span className="text-xs px-2 py-1 bg-slate-800 rounded border border-slate-700 text-slate-400">
-                    {state.settings.style} • {state.settings.aspectRatio}
+                <span className="text-sm px-3 py-1.5 bg-slate-800 rounded border border-slate-700 text-slate-300 flex gap-2 shadow-sm">
+                    <span className="font-medium">{state.settings.style}</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="font-mono text-slate-400">{state.settings.textModel.split('-')[1]}</span>
                 </span>
             )}
         </div>
@@ -186,8 +213,8 @@ export default function App() {
         
         {error && (
             <div className="mb-6 bg-red-500/10 border border-red-500/50 text-red-200 p-4 rounded-lg flex items-center justify-between">
-                <span>{error}</span>
-                <button onClick={() => setError(null)} className="hover:bg-red-500/20 p-1 rounded">忽略</button>
+                <span className="text-lg">{error}</span>
+                <button onClick={() => setError(null)} className="hover:bg-red-500/20 px-3 py-1 rounded text-sm">忽略</button>
             </div>
         )}
 
@@ -217,6 +244,7 @@ export default function App() {
                 settings={state.settings}
                 updateScene={handleUpdateScene}
                 generateImage={handleGenerateSceneImage}
+                generateVideo={handleGenerateSceneVideo}
                 generateAllImages={handleGenerateAllSceneImages}
                 onNext={() => setState(prev => ({ ...prev, step: 4 }))}
             />
