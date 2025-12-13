@@ -1,7 +1,5 @@
 # 视界 · 造物主 (StoryBoard AI)
 
-![视界 · 造物主 Cover](https://placehold.co/1200x600/0f172a/60a5fa?text=%E8%A7%86%E7%95%8C+%C2%B7+%E9%80%A0%E7%89%A9%E4%B8%BB&font=noto)
-
 **视界 · 造物主** 是一个现代化的 Web 应用程序，旨在利用 Google Gemini 模型的上帝视角，帮助创作者、导演和编剧将文字大纲瞬间转化为可视化的影视级分镜脚本和动态预览（Animatic）。
 
 ## ✨ 核心功能
@@ -78,7 +76,7 @@
 
 1.  **克隆项目**
     ```bash
-    git clone https://github.com/your-repo/storyboard-ai.git
+    git clone https://github.com/Autfy/StoryBoard-AI.git
     cd storyboard-ai
     ```
 
