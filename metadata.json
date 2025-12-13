@@ -1,0 +1,5 @@
+{
+  "name": "StoryBoard AI",
+  "description": "四步生成AI故事板。通过角色分析、分镜拆解和导出功能，将故事转化为一致的视觉叙事。",
+  "requestFramePermissions": []
+}
