@@ -21,8 +21,12 @@ export const Step4Export: React.FC<Props> = ({ scenes, characters, settings }) =
       // 1. Add Story Info Summary
       const storyContent = `
 # ${settings.style} 分镜脚本项目
+
 ## 故事梗概
 ${settings.storyText}
+
+## 角色列表
+${characters.map(c => `- ${c.name}: ${c.description}`).join('\n')}
 
 ## 统计
 - 角色: ${characters.length}
@@ -30,12 +34,26 @@ ${settings.storyText}
       `;
       zip.file("project_summary.md", storyContent);
 
-      // 2. Add Character Images
+      // 2. Add Character Files (Images + Info)
       const charFolder = zip.folder("characters");
       characters.forEach((c) => {
+        const safeName = c.name.replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_") || "character";
+        
+        // Character Info Text File
+        const charInfoContent = `角色名称: ${c.name}
+
+角色描述 (特征):
+${c.description}
+
+视觉提示词 (Visual Prompt):
+${c.visualPrompt}
+`;
+        charFolder.file(`${safeName}_info.txt`, charInfoContent);
+
+        // Character Image
         if (c.imageUrl) {
           const base64Data = c.imageUrl.split(',')[1];
-          charFolder.file(`${c.name.replace(/\s+/g, '_')}_ref.png`, base64Data, { base64: true });
+          charFolder.file(`${safeName}_ref.png`, base64Data, { base64: true });
         }
       });
 
@@ -81,6 +99,7 @@ ${s.visualPrompt}
   };
 
   const imagesCount = scenes.filter(s => s.imageUrl).length;
+  const charImagesCount = characters.filter(c => c.imageUrl).length;
 
   return (
     <div className="max-w-4xl mx-auto text-center space-y-8 animate-in fade-in zoom-in duration-500 pt-10">
@@ -100,22 +119,26 @@ ${s.visualPrompt}
               </h3>
               <ul className="space-y-3 text-slate-300">
                   <li className="flex justify-between border-b border-slate-700 pb-2">
-                      <span>角色数量</span>
-                      <span className="font-mono text-white">{characters.length}</span>
+                      <span>角色</span>
+                      <span className="font-mono text-white">
+                        {characters.length} 个 (包含 {charImagesCount} 张参考图)
+                      </span>
                   </li>
                   <li className="flex justify-between border-b border-slate-700 pb-2">
-                      <span>分镜数量</span>
-                      <span className="font-mono text-white">{scenes.length}</span>
+                      <span>分镜</span>
+                      <span className="font-mono text-white">{scenes.length} 个</span>
                   </li>
                    <li className="flex justify-between border-b border-slate-700 pb-2">
-                      <span>已生成图片</span>
+                      <span>已生成分镜图</span>
                       <span className={`font-mono ${imagesCount === scenes.length ? "text-green-400" : "text-yellow-400"}`}>
                         {imagesCount} / {scenes.length}
                       </span>
                   </li>
                   <li className="flex justify-between">
-                      <span>导出结构</span>
-                      <span className="font-mono text-white text-xs">场景文本+图片(可选)</span>
+                      <span>文件结构</span>
+                      <span className="font-mono text-white text-xs text-right">
+                        characters/<br/>scenes/<br/>project_summary.md
+                      </span>
                   </li>
               </ul>
           </div>
@@ -124,7 +147,7 @@ ${s.visualPrompt}
               <p className="text-center text-slate-400">
                   下载 ZIP 压缩包。<br/>
                   <span className="text-xs text-slate-500">
-                    包含 project_summary.md, characters/ 文件夹, 以及 scenes/ 文件夹 (每个场景包含独立的 .txt 和可选的 .png 文件)。
+                    包含完整的故事梗概、角色设定文档与参考图、以及所有分镜的脚本与视觉图。
                   </span>
               </p>
               <button
