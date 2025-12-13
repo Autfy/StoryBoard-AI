@@ -1,13 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AppState, INITIAL_SETTINGS, Character, Scene } from "./types";
-import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage, generateSceneVideo } from "./services/geminiService";
+import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage, generateSceneVideo, validateApiKey } from "./services/geminiService";
 import { Step1Input } from "./components/Step1Input";
 import { Step2Characters } from "./components/Step2Characters";
 import { Step3Scenes } from "./components/Step3Scenes";
 import { Step4Export } from "./components/Step4Export";
-import { Layers, Users, Film, Download } from "lucide-react";
+import { Layers, Users, Film, Download, AlertTriangle, Loader2 } from "lucide-react";
 
 export default function App() {
+  // Startup Check State
+  const [isCheckingKey, setIsCheckingKey] = useState(true);
+  const [isKeyValid, setIsKeyValid] = useState(false);
+
   const [state, setState] = useState<AppState>({
     step: 1,
     settings: INITIAL_SETTINGS,
@@ -17,6 +21,14 @@ export default function App() {
   });
 
   const [error, setError] = useState<string | null>(null);
+
+  // Initial API Key Validation
+  useEffect(() => {
+    validateApiKey().then(valid => {
+        setIsKeyValid(valid);
+        setIsCheckingKey(false);
+    });
+  }, []);
 
   // Step 1 -> 2: Analyze Story
   const handleAnalyzeStory = async () => {
@@ -190,6 +202,45 @@ export default function App() {
       ))}
     </div>
   );
+
+  // --- Render Checking/Error States ---
+  
+  if (isCheckingKey) {
+      return (
+          <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-slate-300">
+              <Loader2 className="animate-spin mb-4 text-blue-500" size={48} />
+              <p className="text-lg font-medium">正在验证 API 连接...</p>
+          </div>
+      );
+  }
+
+  if (!isKeyValid) {
+      return (
+          <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-slate-100 p-8">
+              <div className="bg-slate-800 border border-red-500/50 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+                  <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <AlertTriangle className="text-red-500" size={32} />
+                  </div>
+                  <h1 className="text-2xl font-bold mb-4">API 连接失败</h1>
+                  <p className="text-slate-400 mb-6 leading-relaxed">
+                      无法连接到 Google Gemini API。请检查您的 <code>API_KEY</code> 配置。
+                  </p>
+                  <div className="bg-slate-900/50 p-4 rounded-lg text-left text-sm text-slate-400 font-mono mb-6 overflow-x-auto">
+                      <p className="mb-2 text-xs uppercase font-bold text-slate-500">Possible fixes:</p>
+                      1. Check <code>.env</code> file exists.<br/>
+                      2. Check <code>API_KEY</code> is set in system env.<br/>
+                      3. Verify the key has quota/permissions.
+                  </div>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-lg font-bold transition-colors"
+                  >
+                      重试连接
+                  </button>
+              </div>
+          </div>
+      );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-100">

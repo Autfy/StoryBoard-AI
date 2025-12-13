@@ -8,6 +8,29 @@ const getClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+// --- API Key Validation ---
+
+export const validateApiKey = async (): Promise<boolean> => {
+  try {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+        console.warn("API Key is missing in environment variables.");
+        return false;
+    }
+    
+    const ai = new GoogleGenAI({ apiKey });
+    // Use a lightweight operation to verify the key
+    await ai.models.countTokens({
+      model: "gemini-2.5-flash",
+      contents: { parts: [{ text: "test" }] }
+    });
+    return true;
+  } catch (e) {
+    console.error("API Key validation failed:", e);
+    return false;
+  }
+};
+
 // --- Step 2: Analyze Characters ---
 
 export const analyzeCharacters = async (
