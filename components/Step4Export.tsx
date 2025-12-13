@@ -18,6 +18,12 @@ export const Step4Export: React.FC<Props> = ({ scenes, characters, settings }) =
     try {
       const zip = new JSZip();
       
+      // Calculate total duration safely (handle "5s", "approx 5s", or missing values)
+      const totalDuration = scenes.reduce((acc, s) => {
+        const val = parseInt(s.estimatedDuration || "0");
+        return acc + (isNaN(val) ? 0 : val);
+      }, 0);
+
       // 1. Add Story Info Summary
       const storyContent = `
 # ${settings.style} 分镜脚本项目
@@ -28,7 +34,7 @@ ${settings.storyText}
 ## 统计
 - 角色数: ${characters.length}
 - 分镜数: ${scenes.length}
-- 总预估时长: ${scenes.reduce((acc, s) => acc + parseInt(s.estimatedDuration || "0"), 0)}s (Approx)
+- 总预估时长: ~${totalDuration} 秒
 
 ## 角色列表
 ${characters.map(c => `- ${c.name}: ${c.description}`).join('\n')}
@@ -80,6 +86,9 @@ ${s.visualPrompt}
 
 视频提示词 (Video Prompt):
 ${s.videoPrompt || "N/A"}
+
+包含角色:
+${s.characters?.join(", ") || "未指定"}
 `;
         sceneFolder.file(`scene_${sceneNum}.txt`, textContent);
 
@@ -197,4 +206,4 @@ ${s.videoPrompt || "N/A"}
       </div>
     </div>
   );
-};
+}

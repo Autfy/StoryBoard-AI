@@ -50,8 +50,8 @@ export default function App() {
 
       // Trigger auto-generation for all characters in parallel
       characters.forEach(char => {
-         // Pass selected image model
-         generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel)
+         // Pass selected image model and size
+         generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel, state.settings.imageSize)
             .then(url => {
                 setState(prev => ({
                     ...prev,
@@ -87,7 +87,7 @@ export default function App() {
 
     handleUpdateCharacter(id, { isLoading: true });
     try {
-      const imageUrl = await generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel);
+      const imageUrl = await generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel, state.settings.imageSize);
       handleUpdateCharacter(id, { imageUrl, isLoading: false });
     } catch (e) {
       console.error(e);

@@ -1,6 +1,6 @@
 import React from "react";
-import { StorySettings, AspectRatio, ImageStyle, TextModel, ImageModel, VideoModel } from "../types";
-import { Sparkles, BookOpen, BrainCircuit, Image as ImageIcon, Video, Settings2 } from "lucide-react";
+import { StorySettings, AspectRatio, ImageStyle, TextModel, ImageModel, VideoModel, ImageSize } from "../types";
+import { Sparkles, BookOpen, BrainCircuit, Image as ImageIcon, Video, Settings2, Zap } from "lucide-react";
 
 interface Props {
   settings: StorySettings;
@@ -27,7 +27,11 @@ const STYLES: ImageStyle[] = [
   "黑白电影"
 ];
 
-const RATIOS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:3", "3:4"];
+// Updated to only support Veo compatible ratios
+const RATIOS: { value: AspectRatio; label: string }[] = [
+    { value: "16:9", label: "横屏 (16:9) - 电影/桌面" },
+    { value: "9:16", label: "竖屏 (9:16) - 手机/Shorts" }
+];
 
 const TEXT_MODELS: {value: TextModel; label: string}[] = [
     { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
@@ -108,14 +112,14 @@ export const Step1Input: React.FC<Props> = ({ settings, setSettings, onNext, isL
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-300 uppercase tracking-wide">画幅比例</label>
+                        <label className="text-sm font-bold text-slate-300 uppercase tracking-wide">画幅比例 (Veo 兼容)</label>
                         <select
                             className="w-full bg-slate-900/80 border border-slate-700 rounded-lg p-3 text-base text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
                             value={settings.aspectRatio}
                             onChange={(e) => setSettings({ ...settings, aspectRatio: e.target.value as AspectRatio })}
                         >
                             {RATIOS.map((r) => (
-                                <option key={r} value={r}>{r}</option>
+                                <option key={r.value} value={r.value}>{r.label}</option>
                             ))}
                         </select>
                     </div>
@@ -162,19 +166,37 @@ export const Step1Input: React.FC<Props> = ({ settings, setSettings, onNext, isL
                             </select>
                         </div>
 
-                         {/* Image */}
+                         {/* Image Model & Size */}
                          <div className="flex flex-col gap-1.5">
                              <div className="flex justify-between items-center">
-                                <label className="text-xs font-bold text-purple-400 flex items-center gap-1"><ImageIcon size={12}/> 绘图模型</label>
+                                <label className="text-xs font-bold text-purple-400 flex items-center gap-1"><ImageIcon size={12}/> 绘图配置</label>
                                 <span className="text-xs text-slate-500 font-mono">{resources.image.count}</span>
                              </div>
-                             <select
-                                className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-sm text-slate-300 outline-none"
-                                value={settings.imageModel}
-                                onChange={(e) => setSettings({...settings, imageModel: e.target.value as ImageModel})}
-                            >
-                                {IMAGE_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                            </select>
+                             <div className="flex gap-2">
+                                <select
+                                    className="flex-[2] bg-slate-900 border border-slate-600 rounded p-2.5 text-sm text-slate-300 outline-none"
+                                    value={settings.imageModel}
+                                    onChange={(e) => setSettings({...settings, imageModel: e.target.value as ImageModel})}
+                                >
+                                    {IMAGE_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                </select>
+                                <div className="flex-1 bg-slate-900 border border-slate-600 rounded flex p-1">
+                                    <button 
+                                        onClick={() => setSettings({...settings, imageSize: "1K"})}
+                                        className={`flex-1 flex items-center justify-center rounded text-xs font-bold transition-colors ${settings.imageSize === "1K" ? "bg-slate-700 text-white" : "text-slate-500 hover:text-slate-300"}`}
+                                        title="1K Resolution (更省钱)"
+                                    >
+                                        1K
+                                    </button>
+                                    <button 
+                                        onClick={() => setSettings({...settings, imageSize: "2K"})}
+                                        className={`flex-1 flex items-center justify-center rounded text-xs font-bold transition-colors ${settings.imageSize === "2K" ? "bg-purple-600 text-white" : "text-slate-500 hover:text-slate-300"}`}
+                                        title="2K Resolution (更贵)"
+                                    >
+                                        2K
+                                    </button>
+                                </div>
+                             </div>
                         </div>
 
                          {/* Video */}

@@ -8,14 +8,14 @@ StoryBoard AI 是一个现代化的 Web 应用程序，旨在利用 Google Gemin
 
 ### 1. 故事分析与配置
 *   **多风格支持**：支持电影感、赛博朋克、水彩、动漫等多种视觉风格。
-*   **画幅定制**：支持 16:9, 9:16 (Shorts/Reels), 1:1, 4:3 等多种比例。
+*   **画幅定制**：支持 **16:9 (电影/桌面)** 和 **9:16 (Shorts/Reels)**，完美适配 Veo 视频模型。
 *   **成本估算**：实时显示预计消耗的 Tokens 和图片数量，帮助控制 API 成本。
 *   **智能分析**：基于 `Gemini 2.5 Flash` 分析故事结构。
 
 ### 2. 角色一致性设计
 *   **自动提取**：从故事中自动提取主要角色。
 *   **特征生成**：生成详细的角色性格描述和用于绘图的 `Visual Prompt`。
-*   **参考图生成**：使用 `Gemini 3 Pro Image` 模型为每个角色生成标准参考图，确保后续分镜中的人物一致性。
+*   **参考图生成**：使用 `Gemini 3 Pro Image` 模型为每个角色生成标准参考图 (支持 2K 分辨率)，确保后续分镜中的人物一致性。
 *   **用户干预**：支持手动上传参考图或修改 Prompt 重绘。
 
 ### 3. 智能分镜生成 (Visual Storytelling)
@@ -27,6 +27,7 @@ StoryBoard AI 是一个现代化的 Web 应用程序，旨在利用 Google Gemin
 ### 4. Veo 视频预览 (Animatic)
 *   **图生视频**：集成 Google 最新的 **Veo 3.1** 视频模型。
 *   **动态预览**：支持点击分镜单独生成 5-10秒 的动态预览视频。
+*   **画幅匹配**：严格遵循 16:9 或 9:16 标准，确保视频生成无缝衔接。
 *   **可控运镜**：提供专属的 `Video Prompt` 编辑框，精确控制视频中的动作和运镜。
 
 ### 5. 导出与交付
@@ -58,7 +59,18 @@ StoryBoard AI 是一个现代化的 Web 应用程序，旨在利用 Google Gemin
     *   请确保该 Key 有权访问 `Gemini 2.5 Flash`, `Gemini 3 Pro`, 和 `Veo` 模型。
     *   注意：Veo 视频生成通常需要付费账号或特定白名单权限。
 
-### 本地开发
+### Windows 快速启动 (推荐)
+
+项目包含一个 `update_and_run.txt` 文件，用于简化 Windows 环境下的更新和启动流程。
+
+1.  将 `update_and_run.txt` 重命名为 **`update_and_run.bat`**。
+2.  确保您已安装 **Node.js** 和 **Git**。
+3.  双击运行 `update_and_run.bat`，它将自动执行：
+    *   拉取最新代码 (git pull)。
+    *   安装依赖 (npm install)。
+    *   启动应用 (npm start)。
+
+### 手动本地开发
 
 1.  **克隆项目**
     ```bash
@@ -92,8 +104,6 @@ StoryBoard AI 是一个现代化的 Web 应用程序，旨在利用 Google Gemin
         echo %API_KEY%
         ```
 
-    *注意：在纯前端构建工具（如 Vite/Parcel）中，通常需要使用 `VITE_` 前缀或配置 define 插件来注入 `process.env.API_KEY`。本项目已配置直接读取 `process.env.API_KEY`，请确保您的构建工具支持此方式。*
-
 3.  **安装依赖**
     ```bash
     npm install
@@ -121,13 +131,13 @@ StoryBoard AI 是一个现代化的 Web 应用程序，旨在利用 Google Gemin
 ## ⚠️ 注意事项
 
 1.  **API 成本**：
-    *   图片生成（特别是 Gemini 3 Pro）和 Veo 视频生成会消耗较多额度。请关注 Google AI Studio 的配额限制。
+    *   图片生成（特别是 Gemini 3 Pro 2K分辨率）和 Veo 视频生成会消耗较多额度。请关注 Google AI Studio 的配额限制。
     *   Step 1 界面提供了粗略的 Token 估算，但实际计费请以 Google Cloud Console 为准。
 
 2.  **视频生成 (Veo)**：
     *   Veo 模型生成视频需要一定时间（通常 30-60秒），请耐心等待。
     *   生成视频必须先生成场景图片（Image-to-Video 模式以保证画面连贯性）。
-    *   视频生成的 Prompt 默认为英文，建议使用描述物理运动的词汇（如 Pan right, Zoom in, Running fast）。
+    *   **画幅限制**：仅支持 16:9 和 9:16。
 
 3.  **角色一致性**：
     *   虽然我们在 Prompt 中注入了角色特征，但目前的 AI 模型（即便是最先进的）在长序列中保持角色 100% 一致仍有挑战。手动微调每个场景的 Visual Prompt 可以获得更好效果。

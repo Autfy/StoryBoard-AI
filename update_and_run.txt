@@ -1,0 +1,47 @@
+@echo off
+setlocal
+title StoryBoard AI Launcher
+
+echo ===================================================
+echo   StoryBoard AI - Update and Run Script
+echo ===================================================
+echo.
+
+:: 1. Check for Git
+where git >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [WARNING] Git is not installed or not in PATH. Skipping update.
+) else (
+    echo [INFO] Pulling latest changes...
+    git pull
+    if %errorlevel% neq 0 (
+        echo [WARNING] Git pull failed. Continuing with current version...
+    ) else (
+        echo [SUCCESS] Source code updated.
+    )
+)
+
+echo.
+:: 2. Install Dependencies
+echo [INFO] Installing dependencies...
+where npm >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [ERROR] NPM is not installed. Please install Node.js.
+    pause
+    exit /b 1
+)
+
+call npm install
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install dependencies.
+    pause
+    exit /b 1
+)
+
+echo.
+:: 3. Start Application
+echo [INFO] Starting StoryBoard AI...
+echo.
+call npm start
+
+pause

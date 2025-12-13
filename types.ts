@@ -1,4 +1,4 @@
-export type AspectRatio = "1:1" | "16:9" | "9:16" | "4:3" | "3:4";
+export type AspectRatio = "16:9" | "9:16";
 export type ImageStyle = 
   | "电影感" 
   | "动漫" 
@@ -18,6 +18,7 @@ export type ImageStyle =
 
 export type TextModel = "gemini-2.5-flash" | "gemini-3-pro-preview";
 export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001";
+export type ImageSize = "1K" | "2K"; // New type for resolution control
 export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview";
 
 export interface StorySettings {
@@ -29,6 +30,7 @@ export interface StorySettings {
   // Model Configuration
   textModel: TextModel;
   imageModel: ImageModel;
+  imageSize: ImageSize; // Added setting
   videoModel: VideoModel;
 }
 
@@ -80,5 +82,6 @@ export const INITIAL_SETTINGS: StorySettings = {
   sceneCount: 8,
   textModel: "gemini-3-pro-preview",
   imageModel: "gemini-3-pro-image-preview",
+  imageSize: "1K", // Default to 1K to save cost
   videoModel: "veo-3.1-generate-preview"
 };

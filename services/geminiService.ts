@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Character, Scene, StorySettings } from "../types";
+import { Character, Scene, StorySettings, ImageSize } from "../types";
 
 // Initialize Gemini Client
 const getClient = () => {
@@ -81,14 +81,16 @@ export const analyzeCharacters = async (
 const generateImageInternal = async (
   prompt: string, 
   model: string, 
-  aspectRatio: string
+  aspectRatio: string,
+  imageSize: ImageSize = "1K" // Added imageSize parameter
 ): Promise<string> => {
     const ai = getClient();
     
-    // Clean aspect ratio
-    const validRatio = ["1:1", "3:4", "4:3", "9:16", "16:9"].includes(aspectRatio) 
+    // Strict clean aspect ratio for Veo compatibility
+    // Now we only support 16:9 and 9:16
+    const validRatio = ["16:9", "9:16"].includes(aspectRatio) 
       ? aspectRatio 
-      : "1:1";
+      : "16:9";
 
     // CASE 1: Imagen Models
     if (model.includes("imagen")) {
@@ -115,7 +117,8 @@ const generateImageInternal = async (
         };
 
         if (model === "gemini-3-pro-image-preview") {
-            config.imageConfig.imageSize = "1K";
+            // Dynamically set based on user preference
+            config.imageConfig.imageSize = imageSize;
         }
 
         const response = await ai.models.generateContent({
@@ -141,10 +144,11 @@ export const generateCharacterImage = async (
   character: Character,
   style: string,
   aspectRatio: string,
-  model: string = "gemini-3-pro-image-preview"
+  model: string = "gemini-3-pro-image-preview",
+  imageSize: ImageSize = "1K"
 ): Promise<string> => {
   const prompt = `Character Design Sheet, style: ${style}. ${character.visualPrompt}. Neutral background, full body shot, detailed character design.`;
-  return generateImageInternal(prompt, model, aspectRatio);
+  return generateImageInternal(prompt, model, aspectRatio, imageSize);
 };
 
 // --- Step 3: Breakdown Scenes ---
@@ -252,7 +256,7 @@ export const generateSceneImage = async (
   Camera: ${scene.camera}. 
   High quality, detailed, 8k resolution.`;
 
-  return generateImageInternal(prompt, settings.imageModel, settings.aspectRatio);
+  return generateImageInternal(prompt, settings.imageModel, settings.aspectRatio, settings.imageSize);
 };
 
 // --- Step 3c: Generate Scene Video (Veo) ---
@@ -276,6 +280,9 @@ export const generateSceneVideo = async (
   // Veo generates silent video. Dialogue in prompt might confuse it.
   const prompt = scene.videoPrompt || `${scene.description}. Cinematic motion, slow motion, high quality.`;
 
+  // Veo strictly supports "16:9" or "9:16".
+  // Since we restricted inputs to only these two, we pass them directly.
+  // Fallback to 16:9 just in case of weird state.
   const veoRatio = settings.aspectRatio === "9:16" ? "9:16" : "16:9";
 
   // Use selected video model
