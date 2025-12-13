@@ -2,10 +2,10 @@
 setlocal enabledelayedexpansion
 title StoryBoard AI Launcher
 
-:: ===================================================
-:: CRITICAL FIX: Switch to the script's own directory
-:: This prevents the "C:\Windows\System32" error
-:: ===================================================
+REM ===================================================
+REM CRITICAL FIX: Switch to the script's own directory
+REM This prevents the "C:\Windows\System32" error
+REM ===================================================
 cd /d "%~dp0"
 
 echo ===================================================
@@ -14,7 +14,7 @@ echo ===================================================
 echo Current Working Directory: %CD%
 echo.
 
-:: 1. Check for Git and Repository Status
+REM 1. Check for Git and Repository Status
 where git >nul 2>nul
 if %errorlevel% neq 0 (
     echo [WARNING] Git is not installed or not in PATH. Skipping update.
@@ -31,7 +31,7 @@ if %errorlevel% neq 0 (
         echo [WARNING] ".git" folder not found. 
         echo [INFO] Skipping update check (This assumes you downloaded the ZIP).
         
-        :: Optional: If package.json is missing, try to clone fresh
+        REM Optional: If package.json is missing, try to clone fresh
         if not exist "package.json" (
             echo [INFO] package.json missing. Attempting to clone from GitHub...
             git clone https://github.com/Autfy/StoryBoard-AI.git .
@@ -40,7 +40,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-:: 2. Install Dependencies
+REM 2. Install Dependencies
 echo [INFO] Checking package.json...
 if not exist "package.json" (
     echo.
@@ -61,7 +61,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-:: 3. Start Application
+REM 3. Start Application
 echo [INFO] Starting StoryBoard AI...
 echo.
 call npm start

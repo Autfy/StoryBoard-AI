@@ -5,12 +5,13 @@ import { Step1Input } from "./components/Step1Input";
 import { Step2Characters } from "./components/Step2Characters";
 import { Step3Scenes } from "./components/Step3Scenes";
 import { Step4Export } from "./components/Step4Export";
-import { Layers, Users, Film, Download, AlertTriangle, Loader2 } from "lucide-react";
+import { Layers, Users, Film, Download, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 
 export default function App() {
   // Startup Check State
   const [isCheckingKey, setIsCheckingKey] = useState(true);
   const [isKeyValid, setIsKeyValid] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>("");
 
   const [state, setState] = useState<AppState>({
     step: 1,
@@ -24,11 +25,25 @@ export default function App() {
 
   // Initial API Key Validation
   useEffect(() => {
-    validateApiKey().then(valid => {
-        setIsKeyValid(valid);
-        setIsCheckingKey(false);
-    });
+    checkKey();
   }, []);
+
+  const checkKey = async () => {
+    setIsCheckingKey(true);
+    try {
+        const apiKey = process.env.API_KEY;
+        const keyStatus = apiKey ? `Present (Starts with ${apiKey.substring(0,4)}...)` : "Missing/Undefined";
+        
+        const isValid = await validateApiKey();
+        setIsKeyValid(isValid);
+        setDebugInfo(keyStatus);
+    } catch (e: any) {
+        setIsKeyValid(false);
+        setDebugInfo(`Validation Error: ${e.message}`);
+    } finally {
+        setIsCheckingKey(false);
+    }
+  };
 
   // Step 1 -> 2: Analyze Story
   const handleAnalyzeStory = async () => {
@@ -217,25 +232,34 @@ export default function App() {
   if (!isKeyValid) {
       return (
           <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-slate-100 p-8">
-              <div className="bg-slate-800 border border-red-500/50 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+              <div className="bg-slate-800 border border-red-500/50 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center animate-in fade-in zoom-in duration-300">
                   <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                       <AlertTriangle className="text-red-500" size={32} />
                   </div>
                   <h1 className="text-2xl font-bold mb-4">API 连接失败</h1>
                   <p className="text-slate-400 mb-6 leading-relaxed">
-                      无法连接到 Google Gemini API。请检查您的 <code>API_KEY</code> 配置。
+                      无法连接到 Google Gemini API。
                   </p>
-                  <div className="bg-slate-900/50 p-4 rounded-lg text-left text-sm text-slate-400 font-mono mb-6 overflow-x-auto">
-                      <p className="mb-2 text-xs uppercase font-bold text-slate-500">Possible fixes:</p>
-                      1. Check <code>.env</code> file exists.<br/>
-                      2. Check <code>API_KEY</code> is set in system env.<br/>
-                      3. Verify the key has quota/permissions.
+                  
+                  {/* Debug Info Section */}
+                  <div className="bg-slate-900 p-4 rounded-lg text-left text-xs text-slate-400 font-mono mb-6 overflow-x-auto border border-slate-700">
+                      <p className="mb-2 uppercase font-bold text-slate-500 border-b border-slate-700 pb-1">Debug Info</p>
+                      <p><span className="text-blue-400">API_KEY Status:</span> {debugInfo}</p>
+                      <p className="mt-2"><span className="text-yellow-400">Troubleshooting:</span></p>
+                      <ul className="list-disc pl-4 space-y-1 mt-1 text-slate-500">
+                          <li>Check <code>.env</code> file is in project root (not src).</li>
+                          <li>Check file name is exactly <code>.env</code> (not .env.txt).</li>
+                          <li>If using System Env Vars, <strong>restart the terminal</strong>.</li>
+                      </ul>
                   </div>
+
                   <button 
-                    onClick={() => window.location.reload()}
-                    className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-lg font-bold transition-colors"
+                    onClick={() => {
+                        window.location.reload();
+                    }}
+                    className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
                   >
-                      重试连接
+                      <RefreshCw size={18}/> 重试连接 (Reload)
                   </button>
               </div>
           </div>
