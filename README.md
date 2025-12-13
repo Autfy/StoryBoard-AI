@@ -67,10 +67,31 @@ StoryBoard AI 是一个现代化的 Web 应用程序，旨在利用 Google Gemin
     ```
 
 2.  **设置环境变量**
-    在项目根目录创建 `.env` 文件（或设置系统环境变量）：
+
+    **方法 A: 使用 .env 文件**
+    在项目根目录创建 `.env` 文件：
     ```env
     API_KEY=your_google_api_key_here
     ```
+
+    **方法 B: Windows CMD (命令提示符) 设置**
+    
+    *   **临时设置** (仅当前终端窗口有效，关闭后失效):
+        ```cmd
+        set API_KEY=your_google_api_key_here
+        ```
+
+    *   **永久设置** (保存到用户环境变量，重启终端生效):
+        ```cmd
+        setx API_KEY "your_google_api_key_here"
+        ```
+        *注意：使用 `setx` 后，需要关闭当前命令行窗口并重新打开一个新的窗口，变量才会生效。*
+        
+    *   **验证设置**:
+        ```cmd
+        echo %API_KEY%
+        ```
+
     *注意：在纯前端构建工具（如 Vite/Parcel）中，通常需要使用 `VITE_` 前缀或配置 define 插件来注入 `process.env.API_KEY`。本项目已配置直接读取 `process.env.API_KEY`，请确保您的构建工具支持此方式。*
 
 3.  **安装依赖**
