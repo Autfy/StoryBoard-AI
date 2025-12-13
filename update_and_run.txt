@@ -1,39 +1,61 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 title StoryBoard AI Launcher
+
+:: ===================================================
+:: CRITICAL FIX: Switch to the script's own directory
+:: This prevents the "C:\Windows\System32" error
+:: ===================================================
+cd /d "%~dp0"
 
 echo ===================================================
 echo   StoryBoard AI - Update and Run Script
 echo ===================================================
+echo Current Working Directory: %CD%
 echo.
 
-:: 1. Check for Git
+:: 1. Check for Git and Repository Status
 where git >nul 2>nul
 if %errorlevel% neq 0 (
     echo [WARNING] Git is not installed or not in PATH. Skipping update.
 ) else (
-    echo [INFO] Pulling latest changes...
-    git pull
-    if %errorlevel% neq 0 (
-        echo [WARNING] Git pull failed. Continuing with current version...
+    if exist ".git" (
+        echo [INFO] Git repository detected. Pulling latest changes...
+        git pull
+        if !errorlevel! neq 0 (
+            echo [WARNING] Git pull failed. Continuing with current version...
+        ) else (
+            echo [SUCCESS] Source code updated.
+        )
     ) else (
-        echo [SUCCESS] Source code updated.
+        echo [WARNING] ".git" folder not found. 
+        echo [INFO] Skipping update check (This assumes you downloaded the ZIP).
+        
+        :: Optional: If package.json is missing, try to clone fresh
+        if not exist "package.json" (
+            echo [INFO] package.json missing. Attempting to clone from GitHub...
+            git clone https://github.com/Autfy/StoryBoard-AI.git .
+        )
     )
 )
 
 echo.
 :: 2. Install Dependencies
-echo [INFO] Installing dependencies...
-where npm >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR] NPM is not installed. Please install Node.js.
+echo [INFO] Checking package.json...
+if not exist "package.json" (
+    echo.
+    echo [ERROR] package.json not found in: %CD%
+    echo [ERROR] Please ensure you are running this script inside the project folder.
     pause
     exit /b 1
 )
 
+echo [INFO] Installing dependencies...
 call npm install
 if %errorlevel% neq 0 (
-    echo [ERROR] Failed to install dependencies.
+    echo.
+    echo [ERROR] Failed to install dependencies. 
+    echo [TIP] Check your internet connection or Node.js installation.
     pause
     exit /b 1
 )
