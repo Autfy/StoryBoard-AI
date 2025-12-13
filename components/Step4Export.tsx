@@ -2,15 +2,16 @@ import React, { useState } from "react";
 import { Scene, Character, StorySettings } from "../types";
 import { Download, CheckCircle, Package } from "lucide-react";
 // @ts-ignore - Importing from CDN in ESM
-import JSZip from "https://esm.run/jszip"; 
+import JSZip from "jszip"; 
 
 interface Props {
   scenes: Scene[];
   characters: Character[];
   settings: StorySettings;
+  analysisSuggestion: string; // Add analysis suggestion prop
 }
 
-export const Step4Export: React.FC<Props> = ({ scenes, characters, settings }) => {
+export const Step4Export: React.FC<Props> = ({ scenes, characters, settings, analysisSuggestion }) => {
   const [isZipping, setIsZipping] = useState(false);
 
   const handleDownload = async () => {
@@ -24,12 +25,15 @@ export const Step4Export: React.FC<Props> = ({ scenes, characters, settings }) =
         return acc + (isNaN(val) ? 0 : val);
       }, 0);
 
-      // 1. Add Story Info Summary
+      // 1. Add Story Info Summary (Including Analysis)
       const storyContent = `
 # ${settings.style} 分镜脚本项目
 
 ## 故事梗概
 ${settings.storyText}
+
+## 导演分析建议 (AI Director)
+${analysisSuggestion || "无分析记录"}
 
 ## 统计
 - 角色数: ${characters.length}
@@ -52,6 +56,9 @@ ${characters.map(c => `- ${c.name}: ${c.description}`).join('\n')}
 角色描述 (特征):
 ${c.description}
 
+说话/配音风格 (Speaker Style):
+${c.speakerStyle || "N/A"}
+
 视觉提示词 (Visual Prompt):
 ${c.visualPrompt}
 `;
@@ -69,7 +76,9 @@ ${c.visualPrompt}
       
       // Use for loop to handle async video fetching
       for (const s of scenes) {
+        // Naming convention: scene_001.txt, scene_001.png, scene_001.mp4
         const sceneNum = s.number.toString().padStart(3, '0');
+        const filePrefix = `scene_${sceneNum}`;
         
         // Text File for Scene
         const textContent = `场景编号: ${s.number}
@@ -90,20 +99,21 @@ ${s.videoPrompt || "N/A"}
 包含角色:
 ${s.characters?.join(", ") || "未指定"}
 `;
-        sceneFolder.file(`scene_${sceneNum}.txt`, textContent);
+        sceneFolder.file(`${filePrefix}.txt`, textContent);
 
         // Image File for Scene (if exists)
         if (s.imageUrl) {
           const base64Data = s.imageUrl.split(',')[1];
-          sceneFolder.file(`scene_${sceneNum}.png`, base64Data, { base64: true });
+          sceneFolder.file(`${filePrefix}.png`, base64Data, { base64: true });
         }
 
         // Video File for Scene (if exists)
+        // Ensure it's in the same "scenes" folder and named with scene number
         if (s.videoUrl) {
            try {
                const response = await fetch(s.videoUrl);
                const blob = await response.blob();
-               sceneFolder.file(`scene_${sceneNum}.mp4`, blob);
+               sceneFolder.file(`${filePrefix}.mp4`, blob);
            } catch(e) {
                console.error(`Failed to export video for scene ${s.number}`, e);
            }

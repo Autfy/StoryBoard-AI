@@ -1,17 +1,18 @@
 import React from "react";
 import { Character, StorySettings } from "../types";
-import { RefreshCw, User, Wand2, ChevronRight, Upload } from "lucide-react";
+import { RefreshCw, User, Wand2, ChevronRight, Upload, Mic, Zap } from "lucide-react";
 
 interface Props {
   characters: Character[];
   settings: StorySettings;
   updateCharacter: (id: string, updates: Partial<Character>) => void;
   generateImage: (id: string) => void;
+  generateAllImages: () => void; // New Prop
   onNext: () => void;
   isLoadingNext: boolean;
 }
 
-export const Step2Characters: React.FC<Props> = ({ characters, settings, updateCharacter, generateImage, onNext, isLoadingNext }) => {
+export const Step2Characters: React.FC<Props> = ({ characters, settings, updateCharacter, generateImage, generateAllImages, onNext, isLoadingNext }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -19,13 +20,21 @@ export const Step2Characters: React.FC<Props> = ({ characters, settings, updateC
           <h2 className="text-3xl font-bold text-white">角色设计</h2>
           <p className="text-slate-400 text-lg mt-1">审查生成的角色并创建参考图。</p>
         </div>
-        <button
-          onClick={onNext}
-          disabled={isLoadingNext}
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-        >
-          {isLoadingNext ? "正在生成分镜..." : "下一步：分镜脚本"} <ChevronRight size={20} />
-        </button>
+        <div className="flex gap-4">
+             <button
+                onClick={generateAllImages}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg flex items-center gap-2 transition-colors shadow-lg"
+            >
+                <Zap size={20} /> 一键生成所有
+            </button>
+            <button
+            onClick={onNext}
+            disabled={isLoadingNext}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+            {isLoadingNext ? "正在生成分镜..." : "下一步：分镜脚本"} <ChevronRight size={20} />
+            </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-8">
@@ -98,8 +107,25 @@ export const Step2Characters: React.FC<Props> = ({ characters, settings, updateC
                 <textarea
                   value={char.description}
                   onChange={(e) => updateCharacter(char.id, { description: e.target.value })}
-                  className="w-full bg-slate-900/50 text-slate-300 text-base p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none resize-none h-24 leading-relaxed"
+                  className="w-full bg-slate-900/50 text-slate-300 text-base p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none resize-none h-20 leading-relaxed"
                 />
+              </div>
+
+               {/* Speaker Style Section - Simplified */}
+              <div className="space-y-2">
+                  <label className="text-sm font-bold text-purple-400 uppercase tracking-wide flex items-center gap-2">
+                      <Mic size={14} /> 配音/说话风格建议 (Veo)
+                  </label>
+                  <input
+                    type="text"
+                    value={char.speakerStyle || ""}
+                    onChange={(e) => updateCharacter(char.id, { speakerStyle: e.target.value })}
+                    className="w-full bg-slate-900/50 text-slate-200 text-sm p-3 rounded-lg border border-slate-700 focus:border-purple-500 outline-none"
+                    placeholder="AI 自动生成的风格建议..."
+                  />
+                   <p className="text-xs text-slate-500 pl-1">
+                    * 此风格将指导视频生成时的角色神态和表演方式。
+                  </p>
               </div>
 
                <div className="space-y-1.5 flex-1">

@@ -9,10 +9,11 @@ interface Props {
   generateImage: (id: string) => void;
   generateVideo: (id: string) => void;
   generateAllImages: () => void;
+  generateAllVideos: () => void; // New Prop
   onNext: () => void;
 }
 
-export const Step3Scenes: React.FC<Props> = ({ scenes, settings, updateScene, generateImage, generateVideo, generateAllImages, onNext }) => {
+export const Step3Scenes: React.FC<Props> = ({ scenes, settings, updateScene, generateImage, generateVideo, generateAllImages, generateAllVideos, onNext }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500 pb-20">
        <div className="sticky top-0 z-20 bg-[#0f172a]/95 backdrop-blur-md py-6 border-b border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
@@ -23,9 +24,15 @@ export const Step3Scenes: React.FC<Props> = ({ scenes, settings, updateScene, ge
         <div className="flex gap-4">
              <button
             onClick={generateAllImages}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-base flex items-center gap-2 transition-colors shadow-lg"
+            className="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-base flex items-center gap-2 transition-colors shadow-lg"
           >
-            <ImageIcon size={20} /> 生成所有图片
+            <ImageIcon size={18} /> 一键生成图
+          </button>
+           <button
+            onClick={generateAllVideos}
+            className="px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-base flex items-center gap-2 transition-colors shadow-lg"
+          >
+            <Video size={18} /> 一键生成视频
           </button>
           <button
             onClick={onNext}

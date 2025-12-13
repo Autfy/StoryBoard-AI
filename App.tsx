@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AppState, INITIAL_SETTINGS, Character, Scene } from "./types";
-import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage, generateSceneVideo, validateApiKey } from "./services/geminiService";
+import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage, generateSceneVideo, validateApiKey, getStorySuggestions } from "./services/geminiService";
 import { Step1Input } from "./components/Step1Input";
 import { Step2Characters } from "./components/Step2Characters";
 import { Step3Scenes } from "./components/Step3Scenes";
@@ -19,7 +19,11 @@ export default function App() {
     characters: [],
     scenes: [],
     isAnalyzing: false,
+    analysisSuggestion: ""
   });
+  
+  // Specific loading state for suggestion
+  const [isAnalyzingSuggestion, setIsAnalyzingSuggestion] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +49,36 @@ export default function App() {
     }
   };
 
-  // Step 1 -> 2: Analyze Story
+  // Step 1: Analyze Story Suggestion
+  const handleAnalyzeSuggestion = async () => {
+      if(!state.settings.storyText.trim()) return;
+      
+      setIsAnalyzingSuggestion(true);
+      try {
+          const result = await getStorySuggestions(
+              state.settings.storyText, 
+              state.settings.sceneCount, 
+              state.settings.style,
+              state.settings.textModel
+          );
+          
+          setState(prev => ({ 
+              ...prev, 
+              analysisSuggestion: result.suggestion,
+              settings: {
+                  ...prev.settings,
+                  estimatedCharacterCount: result.characterCount // Update the estimated count
+              }
+          }));
+      } catch(e: any) {
+          console.error("Analysis failed", e);
+          setState(prev => ({ ...prev, analysisSuggestion: "分析失败: " + e.message }));
+      } finally {
+          setIsAnalyzingSuggestion(false);
+      }
+  };
+
+  // Step 1 -> 2: Analyze Story (Main flow)
   const handleAnalyzeStory = async () => {
     setState(prev => ({ ...prev, isAnalyzing: true }));
     setError(null);
@@ -53,8 +86,10 @@ export default function App() {
       // Pass selected text model
       const charactersRaw = await analyzeCharacters(state.settings.storyText, state.settings.textModel);
       
-      // Initialize characters with loading state for auto-generation
-      const characters = charactersRaw.map(c => ({ ...c, isLoading: true }));
+      // Initialize characters
+      // If autoGenerateChars is true, set isLoading to true initially
+      const shouldAutoGenerate = state.settings.autoGenerateChars;
+      const characters = charactersRaw.map(c => ({ ...c, isLoading: shouldAutoGenerate }));
 
       setState(prev => ({ 
         ...prev, 
@@ -63,24 +98,26 @@ export default function App() {
         isAnalyzing: false 
       }));
 
-      // Trigger auto-generation for all characters in parallel
-      characters.forEach(char => {
-         // Pass selected image model and size
-         generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel, state.settings.imageSize)
-            .then(url => {
-                setState(prev => ({
-                    ...prev,
-                    characters: prev.characters.map(c => c.id === char.id ? { ...c, imageUrl: url, isLoading: false } : c)
-                }));
-            })
-            .catch(e => {
-                console.error(`Failed to generate image for ${char.name}`, e);
-                 setState(prev => ({
-                    ...prev,
-                    characters: prev.characters.map(c => c.id === char.id ? { ...c, isLoading: false } : c)
-                }));
-            });
-      });
+      // Trigger auto-generation for all characters in parallel ONLY if enabled
+      if (shouldAutoGenerate) {
+          characters.forEach(char => {
+             // Pass selected image model and size
+             generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel, state.settings.imageSize)
+                .then(url => {
+                    setState(prev => ({
+                        ...prev,
+                        characters: prev.characters.map(c => c.id === char.id ? { ...c, imageUrl: url, isLoading: false } : c)
+                    }));
+                })
+                .catch(e => {
+                    console.error(`Failed to generate image for ${char.name}`, e);
+                     setState(prev => ({
+                        ...prev,
+                        characters: prev.characters.map(c => c.id === char.id ? { ...c, isLoading: false } : c)
+                    }));
+                });
+          });
+      }
 
     } catch (e: any) {
       setError(e.message || "故事分析失败");
@@ -109,6 +146,37 @@ export default function App() {
       handleUpdateCharacter(id, { isLoading: false });
       alert("生成图片失败，请重试。");
     }
+  };
+
+  const handleGenerateAllCharacterImages = async () => {
+      // Only generate for those who don't have an image or aren't loading
+      const charsToGen = state.characters.filter(c => !c.imageUrl && !c.isLoading);
+      
+      if (charsToGen.length === 0) return;
+
+      // Set loading state first
+      setState(prev => ({
+          ...prev,
+          characters: prev.characters.map(c => charsToGen.find(ctg => ctg.id === c.id) ? { ...c, isLoading: true } : c)
+      }));
+
+      // Trigger generation
+      charsToGen.forEach(char => {
+          generateCharacterImage(char, state.settings.style, state.settings.aspectRatio, state.settings.imageModel, state.settings.imageSize)
+            .then(url => {
+                setState(prev => ({
+                    ...prev,
+                    characters: prev.characters.map(c => c.id === char.id ? { ...c, imageUrl: url, isLoading: false } : c)
+                }));
+            })
+            .catch(e => {
+                console.error(`Batch Gen failed for ${char.name}`, e);
+                 setState(prev => ({
+                    ...prev,
+                    characters: prev.characters.map(c => c.id === char.id ? { ...c, isLoading: false } : c)
+                }));
+            });
+      });
   };
 
   const handleGoToScenes = async () => {
@@ -175,13 +243,14 @@ export default function App() {
   };
 
   const handleGenerateAllSceneImages = async () => {
-      const scenesToGen = state.scenes.filter(s => !s.imageUrl);
+      const scenesToGen = state.scenes.filter(s => !s.imageUrl && !s.isLoading);
       
       setState(prev => ({
           ...prev,
           scenes: prev.scenes.map(s => scenesToGen.find(stg => stg.id === s.id) ? { ...s, isLoading: true } : s)
       }));
 
+      // Use a loop for scenes to avoid overwhelming if many
       for (const scene of scenesToGen) {
           try {
              const imageUrl = await generateSceneImage(scene, state.settings, state.characters);
@@ -193,9 +262,34 @@ export default function App() {
       }
   };
 
+  const handleGenerateAllSceneVideos = async () => {
+      const scenesToGen = state.scenes.filter(s => s.imageUrl && !s.videoUrl && !s.isVideoLoading);
+      
+      if(scenesToGen.length === 0) {
+          alert("没有可生成视频的分镜（需要先生成图片且未生成视频）。");
+          return;
+      }
+
+      setState(prev => ({
+          ...prev,
+          scenes: prev.scenes.map(s => scenesToGen.find(stg => stg.id === s.id) ? { ...s, isVideoLoading: true } : s)
+      }));
+
+      // Execute sequentially to avoid rate limits or overwhelming browser
+      for (const scene of scenesToGen) {
+          try {
+            const videoUrl = await generateSceneVideo(scene, state.settings);
+            handleUpdateScene(scene.id, { videoUrl, isVideoLoading: false });
+          } catch (e: any) {
+             console.error(`Failed video scene ${scene.number}`, e);
+             handleUpdateScene(scene.id, { isVideoLoading: false });
+          }
+      }
+  };
+
   // Steps indicator component
   const Steps = () => (
-    <div className="flex justify-center mb-8 gap-4 text-base font-medium">
+    <div className="flex items-center gap-6">
       {[
         { num: 1, label: "故事", icon: Layers },
         { num: 2, label: "角色", icon: Users },
@@ -204,15 +298,15 @@ export default function App() {
       ].map((s) => (
         <div 
           key={s.num} 
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-full transition-colors ${
+          className={`flex items-center justify-center gap-3 px-10 py-3 rounded-full transition-all text-lg font-bold min-w-[160px] ${
             state.step === s.num 
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
+              ? "bg-blue-600 text-white shadow-xl shadow-blue-900/40 scale-105" 
               : state.step > s.num 
-                ? "bg-slate-800 text-green-400 border border-slate-700" 
-                : "bg-slate-900 text-slate-500 border border-slate-800"
+                ? "bg-slate-800 text-green-400 border border-slate-700 hover:bg-slate-750" 
+                : "bg-slate-900/50 text-slate-500 border border-slate-800"
           }`}
         >
-          <s.icon size={18} /> <span className="hidden sm:inline">{s.label}</span>
+          <s.icon size={20} /> <span className="hidden sm:inline">{s.label}</span>
         </div>
       ))}
     </div>
@@ -222,7 +316,7 @@ export default function App() {
   
   if (isCheckingKey) {
       return (
-          <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-slate-300">
+          <div className="h-screen bg-[#0f172a] flex flex-col items-center justify-center text-slate-300">
               <Loader2 className="animate-spin mb-4 text-blue-500" size={48} />
               <p className="text-lg font-medium">正在验证 API 连接...</p>
           </div>
@@ -231,7 +325,7 @@ export default function App() {
 
   if (!isKeyValid) {
       return (
-          <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-slate-100 p-8">
+          <div className="h-screen bg-[#0f172a] flex flex-col items-center justify-center text-slate-100 p-8">
               <div className="bg-slate-800 border border-red-500/50 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center animate-in fade-in zoom-in duration-300">
                   <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                       <AlertTriangle className="text-red-500" size={32} />
@@ -267,71 +361,99 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100">
-      <header className="border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur-md sticky top-0 z-10">
-        <div className="w-full px-4 md:px-8 py-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-3">
-                <Film className="text-blue-500" size={28} /> StoryBoard AI
+    // Changed to h-screen and flex-col to fix height issues
+    <div className="h-screen bg-[#0f172a] text-slate-100 flex flex-col overflow-hidden">
+      <header className="shrink-0 border-b border-slate-800 bg-[#0f172a]/80 backdrop-blur-md shadow-lg z-50">
+        <div className="w-full px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+            {/* Title Section */}
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent flex items-center gap-3 shrink-0">
+                <Film className="text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]" size={32} /> 
+                <span className="tracking-wide">视界 · 造物主</span>
             </h1>
-            {state.settings.style !== "电影感" && (
-                <span className="text-sm px-3 py-1.5 bg-slate-800 rounded border border-slate-700 text-slate-300 flex gap-2 shadow-sm">
-                    <span className="font-medium">{state.settings.style}</span>
-                    <span className="text-slate-600">•</span>
-                    <span className="font-mono text-slate-400">{state.settings.textModel.split('-')[1]}</span>
-                </span>
-            )}
+
+            {/* Steps Component - Moved Here */}
+            <Steps />
+
+            {/* Status Tags */}
+            <div className="shrink-0">
+                {state.settings.style !== "电影感" && (
+                    <span className="text-sm px-3 py-1.5 bg-slate-800/80 rounded-lg border border-slate-700 text-slate-300 flex items-center gap-2 shadow-sm">
+                        <span className="font-bold text-white">{state.settings.style}</span>
+                        <span className="text-slate-600">•</span>
+                        <span className="font-mono text-blue-400">{state.settings.textModel.split('-')[1]}</span>
+                    </span>
+                )}
+            </div>
         </div>
       </header>
 
-      <main className="w-full px-4 md:px-8 py-8">
-        <Steps />
+      {/* Main Container handles layout. flex-1 takes remaining height. */}
+      <main className="flex-1 flex flex-col min-h-0 w-full px-4 md:px-6 py-4">
         
         {error && (
-            <div className="mb-6 bg-red-500/10 border border-red-500/50 text-red-200 p-4 rounded-lg flex items-center justify-between">
-                <span className="text-lg">{error}</span>
-                <button onClick={() => setError(null)} className="hover:bg-red-500/20 px-3 py-1 rounded text-sm">忽略</button>
+            <div className="shrink-0 mb-4 bg-red-500/10 border border-red-500/50 text-red-200 p-3 rounded-lg flex items-center justify-between text-sm">
+                <span>{error}</span>
+                <button onClick={() => setError(null)} className="hover:bg-red-500/20 px-2 py-1 rounded">忽略</button>
             </div>
         )}
 
-        {state.step === 1 && (
-          <Step1Input 
-            settings={state.settings} 
-            setSettings={(s) => setState(prev => ({ ...prev, settings: s }))} 
-            onNext={handleAnalyzeStory}
-            isLoading={state.isAnalyzing}
-          />
-        )}
+        {/* This container wraps the steps. 
+            For Step 1, we want it to fit without scrolling if possible.
+            For Step 2, 3, 4, we want scrolling.
+        */}
+        <div className="flex-1 min-h-0 relative">
+             {/* If scroll is needed, the child component should handle it or we add overflow-y-auto here. 
+                 Step 1 manages its own flex layout, others need scroll.
+             */}
+             <div className="absolute inset-0 overflow-y-auto custom-scrollbar pr-2">
+                {state.step === 1 && (
+                <Step1Input 
+                    settings={state.settings} 
+                    setSettings={(s) => setState(prev => ({ ...prev, settings: s }))} 
+                    onNext={handleAnalyzeStory}
+                    isLoading={state.isAnalyzing}
+                    suggestion={state.analysisSuggestion}
+                    setSuggestion={(s) => setState(prev => ({ ...prev, analysisSuggestion: s }))}
+                    onAnalyze={handleAnalyzeSuggestion}
+                    isAnalyzingSuggestion={isAnalyzingSuggestion}
+                />
+                )}
 
-        {state.step === 2 && (
-          <Step2Characters
-            characters={state.characters}
-            settings={state.settings}
-            updateCharacter={handleUpdateCharacter}
-            generateImage={handleGenerateCharacterImage}
-            onNext={handleGoToScenes}
-            isLoadingNext={state.isAnalyzing}
-          />
-        )}
+                {state.step === 2 && (
+                <Step2Characters
+                    characters={state.characters}
+                    settings={state.settings}
+                    updateCharacter={handleUpdateCharacter}
+                    generateImage={handleGenerateCharacterImage}
+                    generateAllImages={handleGenerateAllCharacterImages}
+                    onNext={handleGoToScenes}
+                    isLoadingNext={state.isAnalyzing}
+                />
+                )}
 
-        {state.step === 3 && (
-            <Step3Scenes 
-                scenes={state.scenes}
-                settings={state.settings}
-                updateScene={handleUpdateScene}
-                generateImage={handleGenerateSceneImage}
-                generateVideo={handleGenerateSceneVideo}
-                generateAllImages={handleGenerateAllSceneImages}
-                onNext={() => setState(prev => ({ ...prev, step: 4 }))}
-            />
-        )}
+                {state.step === 3 && (
+                    <Step3Scenes 
+                        scenes={state.scenes}
+                        settings={state.settings}
+                        updateScene={handleUpdateScene}
+                        generateImage={handleGenerateSceneImage}
+                        generateVideo={handleGenerateSceneVideo}
+                        generateAllImages={handleGenerateAllSceneImages}
+                        generateAllVideos={handleGenerateAllSceneVideos}
+                        onNext={() => setState(prev => ({ ...prev, step: 4 }))}
+                    />
+                )}
 
-        {state.step === 4 && (
-            <Step4Export 
-                scenes={state.scenes}
-                characters={state.characters}
-                settings={state.settings}
-            />
-        )}
+                {state.step === 4 && (
+                    <Step4Export 
+                        scenes={state.scenes}
+                        characters={state.characters}
+                        settings={state.settings}
+                        analysisSuggestion={state.analysisSuggestion}
+                    />
+                )}
+            </div>
+        </div>
       </main>
     </div>
   );

@@ -1,6 +1,8 @@
+
 export type AspectRatio = "16:9" | "9:16";
 export type ImageStyle = 
   | "电影感" 
+  | "静谧电影感"
   | "动漫" 
   | "吉卜力风格"
   | "皮克斯3D"
@@ -32,6 +34,12 @@ export interface StorySettings {
   imageModel: ImageModel;
   imageSize: ImageSize; // Added setting
   videoModel: VideoModel;
+  
+  // Automation Settings
+  autoGenerateChars: boolean; // New setting for Step 1 -> 2 transition
+
+  // Analysis Data
+  estimatedCharacterCount: number; // Dynamically analyzed character count
 }
 
 export interface Character {
@@ -39,6 +47,7 @@ export interface Character {
   name: string;
   description: string; // The text analysis of the character
   visualPrompt: string; // Refined prompt for image generation
+  speakerStyle: string; // Voice/Acting style suggestions
   imageUrl?: string; // The generated reference image
   isLoading?: boolean;
 }
@@ -73,6 +82,7 @@ export interface AppState {
   characters: Character[];
   scenes: Scene[];
   isAnalyzing: boolean;
+  analysisSuggestion: string; // Stores the AI director's analysis from Step 1
 }
 
 export const INITIAL_SETTINGS: StorySettings = {
@@ -83,5 +93,7 @@ export const INITIAL_SETTINGS: StorySettings = {
   textModel: "gemini-3-pro-preview",
   imageModel: "gemini-3-pro-image-preview",
   imageSize: "1K", // Default to 1K to save cost
-  videoModel: "veo-3.1-generate-preview"
+  videoModel: "veo-3.1-generate-preview",
+  estimatedCharacterCount: 4, // Default fallback
+  autoGenerateChars: true // Default to true
 };

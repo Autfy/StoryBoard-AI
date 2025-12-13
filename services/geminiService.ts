@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Character, Scene, StorySettings, ImageSize } from "../types";
 
@@ -31,6 +32,60 @@ export const validateApiKey = async (): Promise<boolean> => {
   }
 };
 
+// --- Step 1b: Story Suggestions & Analysis ---
+
+export const getStorySuggestions = async (
+    story: string,
+    sceneCount: number,
+    style: string,
+    model: string = "gemini-2.5-flash"
+): Promise<{ suggestion: string, characterCount: number }> => {
+    const ai = getClient();
+    
+    const systemInstruction = `你是一位资深分镜导演和制片人。
+    请根据用户提供的故事大纲、预选风格(${style})和预选分镜数(${sceneCount})，进行分析。
+    
+    请分析并提取两个关键信息：
+    1. **角色数量估算**：根据故事内容，判断需要设计几个主要角色（用于后续生成角色立绘）。
+    2. **分析建议报告**：生成一份极简的分析报告（Markdown格式）。
+
+    **分析报告格式要求**：
+    *   **核心建议**：
+        *   **故事主题**：[一句话概括]
+        *   **建议风格**：[${style} 或推荐风格]
+        *   **建议分镜**：[${sceneCount} 或推荐数量]
+        *   **角色数量**：[建议的角色数量] 人
+    *   **节奏分析**：[简短点评节奏与张力]
+    *   **风格建议**：[简短描述光影与视觉基调]
+    *   **分镜逻辑**：[简短描述镜头分配思路，如：起(1-2)-承(3-4)-转(5-6)-合(7-8)]
+    
+    要求：语言极其简练，直击重点，不要详细展开。`;
+
+    const response = await ai.models.generateContent({
+        model: model,
+        contents: `故事大纲: ${story}`,
+        config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    suggestion: { type: Type.STRING, description: "Markdown格式的分析建议报告" },
+                    characterCount: { type: Type.INTEGER, description: "估算的主要角色数量" }
+                },
+                required: ["suggestion", "characterCount"]
+            },
+            temperature: 0.7, 
+        }
+    });
+
+    const json = JSON.parse(response.text || "{}");
+    return {
+        suggestion: json.suggestion || "无法生成建议。",
+        characterCount: typeof json.characterCount === 'number' ? json.characterCount : 4
+    };
+};
+
 // --- Step 2: Analyze Characters ---
 
 export const analyzeCharacters = async (
@@ -43,8 +98,9 @@ export const analyzeCharacters = async (
   分析提供的故事并提取主要角色。
   对于每个角色，请提供：
   1. 姓名 (name)
-  2. 简短的性格和角色描述 (description，使用中文)
-  3. 极其详细的视觉描述 (visualPrompt，使用中文)，用于AI绘画生成 (包含外貌、服装、关键特征)。`;
+  2. 简短的性格和角色描述 (description，使用中文)。
+  3. 极其详细的视觉描述 (visualPrompt，使用中文)，用于AI绘画生成 (包含外貌、服装、关键特征)。
+  4. 说话/配音风格建议 (speakerStyle, 使用中文)，描述角色的声线特质和说话习惯（例如：语速快、沉稳低音、活泼高亢）。`;
 
   const response = await ai.models.generateContent({
     model: model,
@@ -60,8 +116,9 @@ export const analyzeCharacters = async (
             name: { type: Type.STRING },
             description: { type: Type.STRING, description: "性格和角色定位 (中文)" },
             visualPrompt: { type: Type.STRING, description: "用于图像生成的详细外貌描写 (中文)" },
+            speakerStyle: { type: Type.STRING, description: "说话风格和声线建议 (中文)" },
           },
-          required: ["name", "description", "visualPrompt"],
+          required: ["name", "description", "visualPrompt", "speakerStyle"],
         },
       },
     },
@@ -74,6 +131,7 @@ export const analyzeCharacters = async (
     name: char.name,
     description: char.description,
     visualPrompt: char.visualPrompt,
+    speakerStyle: char.speakerStyle || "标准声线",
   }));
 };
 
@@ -161,7 +219,10 @@ export const breakdownScenes = async (
 ): Promise<Scene[]> => {
   const ai = getClient();
 
-  const characterContext = characters.map(c => `${c.name}: ${c.visualPrompt}`).join("\n");
+  // Include speakerStyle in the context
+  const characterContext = characters.map(c => 
+    `NAME: ${c.name}\nVISUAL: ${c.visualPrompt}\nSPEAKER_STYLE: ${c.speakerStyle}`
+  ).join("\n\n");
 
   const systemInstruction = `你是一位专业的分镜师。
   将故事分解为恰好 ${sceneCount} 个关键场景。
@@ -172,7 +233,11 @@ export const breakdownScenes = async (
   
   **其他要求**:
   1. 所有输出内容必须使用中文 (visualPrompt, videoPrompt 除外)。
-  2. **videoPrompt (英文)**: 专用于生成视频。必须专注于**视觉动作**和**运镜** (如 "Slow pan right, character is running")。不要包含对白。
+  2. **videoPrompt (英文)**: 专用于生成视频。必须专注于**视觉动作**和**运镜**。
+     *   **重要**: 将角色的 "SPEAKER_STYLE" (说话风格) 转化为**视觉化的表演指令**。
+     *   例如：如果 SPEAKER_STYLE 是 "aggressive/shouting"，videoPrompt 应包含 "angry facial expression, gesturing wildly"。
+     *   如果 SPEAKER_STYLE 是 "shy/whispering"，videoPrompt 应包含 "looking down, subtle movements"。
+     *   不要包含对白文本，只描述动作。
   3. **soundPrompt (中文)**: 描述该场景的音效 (SFX) 和背景音乐氛围。
   4. **estimatedDuration**: 估计该镜头在成片中的时长 (如 "5s")。
   
@@ -197,7 +262,7 @@ export const breakdownScenes = async (
             action: { type: Type.STRING, description: "动作类型摘要" },
             camera: { type: Type.STRING, description: "镜头角度、景别 (如特写、广角) (中文)" },
             visualPrompt: { type: Type.STRING, description: "用于生成图像的详细提示词 (中文)" },
-            videoPrompt: { type: Type.STRING, description: "用于Veo生成的视频提示词 (English, Motion focused, NO dialogue)" },
+            videoPrompt: { type: Type.STRING, description: "用于Veo生成的视频提示词 (English, Motion focused, based on speaker style)" },
             soundPrompt: { type: Type.STRING, description: "音效与音乐提示词 (中文)" },
             estimatedDuration: { type: Type.STRING, description: "预估时长 e.g. '4s'" },
             characters: { 
