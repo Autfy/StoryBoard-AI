@@ -21,7 +21,7 @@ export type ImageStyle =
 export type TextModel = "gemini-2.5-flash" | "gemini-3-pro-preview";
 export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001";
 export type ImageSize = "1K" | "2K"; // New type for resolution control
-export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview";
+export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview" | "gemini-2.5-flash";
 export type Language = "Chinese" | "English"; // New language type
 
 export interface StorySettings {
@@ -79,6 +79,10 @@ export interface Scene {
   videoPrompt?: string; // Specific prompt for Veo
   videoUrl?: string;
   isVideoLoading?: boolean;
+
+  // Audio/TTS generation fields
+  audioUrl?: string;
+  isAudioLoading?: boolean;
 }
 
 export interface AppState {
@@ -96,8 +100,8 @@ export const INITIAL_SETTINGS: StorySettings = {
   aspectRatio: "16:9",
   sceneCount: 8,
   language: "Chinese", // Default language
-  textModel: "gemini-3-pro-preview",
-  imageModel: "gemini-3-pro-image-preview",
+  textModel: "gemini-2.5-flash", // Changed default to 2.5 Flash for better availability
+  imageModel: "gemini-2.5-flash-image", // Changed default to 2.5 Flash Image to avoid 403 errors
   imageSize: "1K", // Default to 1K to save cost
   videoModel: "veo-3.1-generate-preview",
   estimatedCharacterCount: 4, // Default fallback

@@ -61,6 +61,7 @@ const IMAGE_MODELS: {value: ImageModel; label: string}[] = [
 const VIDEO_MODELS: {value: VideoModel; label: string}[] = [
     { value: "veo-3.1-fast-generate-preview", label: "Veo 3.1 Fast" },
     { value: "veo-3.1-generate-preview", label: "Veo 3.1 HQ" },
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
 ];
 
 const LANGUAGES: {value: Language; label: string}[] = [

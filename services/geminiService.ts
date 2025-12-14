@@ -1,6 +1,4 @@
-
-
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Character, Scene, StorySettings, ImageSize, Language } from "../types";
 
 // Initialize Gemini Client
@@ -204,7 +202,7 @@ export const generateCharacterImage = async (
   character: Character,
   style: string,
   aspectRatio: string,
-  model: string = "gemini-3-pro-image-preview",
+  model: string = "gemini-2.5-flash-image", // Updated default to Flash Image to avoid Permission errors
   imageSize: ImageSize = "1K"
 ): Promise<string> => {
   const prompt = `Character Design Sheet, style: ${style}. ${character.visualPrompt}. Neutral background, full body shot, detailed character design.`;
@@ -409,4 +407,100 @@ export const generateSceneVideo = async (
   
   const videoBlob = await videoResponse.blob();
   return URL.createObjectURL(videoBlob);
+};
+
+// --- Step 3d: Generate Audio (TTS) ---
+
+// Helper: Convert Raw PCM to WAV Blob
+function pcmToWav(pcmData: Uint8Array, sampleRate: number = 24000) {
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
+    const blockAlign = (numChannels * bitsPerSample) / 8;
+    const dataSize = pcmData.length;
+    const headerSize = 44;
+    const totalSize = headerSize + dataSize;
+
+    const buffer = new ArrayBuffer(totalSize);
+    const view = new DataView(buffer);
+
+    // RIFF chunk
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(view, 8, 'WAVE');
+
+    // fmt subchunk
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+    view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+
+    // data subchunk
+    writeString(view, 36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    // Write PCM data
+    const bytes = new Uint8Array(buffer, 44);
+    bytes.set(pcmData);
+
+    return new Blob([buffer], { type: 'audio/wav' });
+}
+
+function writeString(view: DataView, offset: number, string: string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
+}
+
+// Decode Base64 helper
+function decodeBase64(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+export const generateSceneAudio = async (
+    scene: Scene,
+    settings: StorySettings,
+    voiceName: string = 'Kore' // Default voice
+): Promise<string> => {
+    const ai = getClient();
+    
+    // Fallback dialogue if empty
+    const textToSay = (scene.dialogue && scene.dialogue !== "无对白") 
+        ? scene.dialogue 
+        : scene.description; // Fallback to description if no dialogue
+
+    if (!textToSay || textToSay.length < 2) {
+        throw new Error("没有足够的文本进行配音。");
+    }
+
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: { parts: [{ text: textToSay }] },
+        config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } }
+            }
+        }
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) {
+        throw new Error("Audio generation failed: No audio data returned.");
+    }
+
+    const pcmBytes = decodeBase64(base64Audio);
+    const wavBlob = pcmToWav(pcmBytes, 24000); // Gemini TTS is 24kHz
+
+    return URL.createObjectURL(wavBlob);
 };

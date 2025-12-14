@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AppState, INITIAL_SETTINGS, Character, Scene } from "./types";
-import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage, generateSceneVideo, validateApiKey, getStorySuggestions } from "./services/geminiService";
+import { analyzeCharacters, generateCharacterImage, breakdownScenes, generateSceneImage, generateSceneVideo, generateSceneAudio, validateApiKey, getStorySuggestions } from "./services/geminiService";
 import { Step1Input } from "./components/Step1Input";
 import { Step2Characters } from "./components/Step2Characters";
 import { Step3Scenes } from "./components/Step3Scenes";
@@ -264,6 +264,28 @@ export default function App() {
     }
   };
 
+  const handleGenerateSceneAudio = async (id: string, voiceName: string) => {
+    const scene = state.scenes.find(s => s.id === id);
+    if(!scene) return;
+
+    if(!scene.dialogue || scene.dialogue === "无对白") {
+        if(!confirm("该场景似乎没有对白，是否将‘动作描述’作为旁白进行配音？")) {
+            return;
+        }
+    }
+
+    handleUpdateScene(id, { isAudioLoading: true });
+    try {
+        // Now passing the voiceName
+        const audioUrl = await generateSceneAudio(scene, state.settings, voiceName);
+        handleUpdateScene(id, { audioUrl, isAudioLoading: false });
+    } catch (e: any) {
+        console.error("Audio generation error:", e);
+        handleUpdateScene(id, { isAudioLoading: false });
+        alert(`配音生成失败: ${e.message}`);
+    }
+  };
+
   const handleGenerateAllSceneImages = async () => {
       const scenesToGen = state.scenes.filter(s => !s.imageUrl && !s.isLoading);
       
@@ -467,6 +489,8 @@ export default function App() {
                         updateScene={handleUpdateScene}
                         generateImage={handleGenerateSceneImage}
                         generateVideo={handleGenerateSceneVideo}
+                        // New prop
+                        generateAudio={handleGenerateSceneAudio}
                         generateAllImages={handleGenerateAllSceneImages}
                         generateAllVideos={handleGenerateAllSceneVideos}
                         onNext={() => setState(prev => ({ ...prev, step: 4 }))}

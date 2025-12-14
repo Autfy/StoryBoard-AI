@@ -77,12 +77,12 @@ ${c.visualPrompt}
         }
       });
 
-      // 3. Add Scene Files (Text + Image + Video)
+      // 3. Add Scene Files (Text + Image + Video + Audio)
       const sceneFolder = zip.folder("scenes");
       
       // Use for loop to handle async video fetching
       for (const s of scenes) {
-        // Naming convention: scene_001.txt, scene_001.png, scene_001.mp4
+        // Naming convention: scene_001.txt, scene_001.png, scene_001.mp4, scene_001.wav
         const sceneNum = s.number.toString().padStart(3, '0');
         const filePrefix = `scene_${sceneNum}`;
         
@@ -114,8 +114,18 @@ ${s.characters?.join(", ") || "未指定"}
           sceneFolder.file(`${filePrefix}.png`, base64Data, { base64: true });
         }
 
+        // Audio File (TTS)
+        if (s.audioUrl) {
+            try {
+                const response = await fetch(s.audioUrl);
+                const blob = await response.blob();
+                sceneFolder.file(`${filePrefix}.wav`, blob);
+            } catch(e) {
+                console.error(`Failed to export audio for scene ${s.number}`, e);
+            }
+        }
+
         // Video File for Scene (if exists)
-        // Ensure it's in the same "scenes" folder and named with scene number
         if (s.videoUrl) {
            try {
                const response = await fetch(s.videoUrl);
@@ -146,6 +156,7 @@ ${s.characters?.join(", ") || "未指定"}
 
   const imagesCount = scenes.filter(s => s.imageUrl).length;
   const videosCount = scenes.filter(s => s.videoUrl).length;
+  const audiosCount = scenes.filter(s => s.audioUrl).length;
   const charImagesCount = characters.filter(c => c.imageUrl).length;
 
   return (
@@ -187,6 +198,12 @@ ${s.characters?.join(", ") || "未指定"}
                         {videosCount} 个
                       </span>
                   </li>
+                  <li className="flex justify-between border-b border-slate-700 pb-3">
+                      <span>已生成配音 (TTS)</span>
+                      <span className={`font-mono ${audiosCount > 0 ? "text-pink-400" : "text-slate-500"}`}>
+                        {audiosCount} 个
+                      </span>
+                  </li>
                   <li className="flex justify-between">
                       <span>文件结构</span>
                       <span className="font-mono text-white text-sm text-right leading-relaxed">
@@ -201,7 +218,7 @@ ${s.characters?.join(", ") || "未指定"}
                   <p className="text-center text-slate-400 text-lg">
                       下载 ZIP 压缩包。<br/>
                       <span className="text-sm text-slate-500 mt-2 block">
-                        包含完整的故事梗概、角色设定文档与参考图、以及所有分镜的脚本与视觉图（含视频）。
+                        包含完整的故事梗概、角色设定文档与参考图、以及所有分镜的脚本与视觉图（含视频和配音）。
                       </span>
                   </p>
                   <button
