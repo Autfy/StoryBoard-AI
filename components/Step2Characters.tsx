@@ -170,11 +170,11 @@ ${char.visualPrompt}
           <div key={char.id} className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-lg flex flex-col">
             
             {/* Toolbar for Import/Export */}
-            <div className="bg-slate-900/50 p-2 flex justify-end gap-2 border-b border-slate-700">
+            <div className="bg-slate-900/50 p-3 flex justify-end gap-3 border-b border-slate-700">
                 <button 
                     onClick={() => handleExportCharacter(char)}
                     disabled={exportingId === char.id}
-                    className="p-1.5 text-slate-400 hover:text-green-400 hover:bg-slate-800 rounded-md transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-green-400 rounded-lg border border-slate-700 transition-all flex items-center gap-2 text-sm font-bold shadow-sm"
                     title="导出角色包 (ZIP)"
                 >
                     {exportingId === char.id ? (
@@ -182,14 +182,16 @@ ${char.visualPrompt}
                     ) : (
                         <Package size={16} />
                     )}
+                    <span>导出</span>
                 </button>
                 
                 <label 
                     htmlFor={`import-${char.id}`}
-                    className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-blue-400 rounded-lg border border-slate-700 transition-all cursor-pointer flex items-center gap-2 text-sm font-bold shadow-sm"
                     title="导入角色数据 (JSON)"
                 >
                     <FileJson size={16} />
+                    <span>导入</span>
                 </label>
                 <input
                     type="file"

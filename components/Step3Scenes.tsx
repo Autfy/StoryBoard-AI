@@ -51,10 +51,11 @@ const SceneCard: React.FC<{
     const isVideoMode = viewMode === 'video';
     const isImageMode = viewMode === 'image';
     
-    const isVertical = settings.aspectRatio === "9:16";
-    const mediaContainerClass = isVertical 
-        ? "h-[500px] w-auto aspect-[9/16]" 
-        : "w-full aspect-video";
+    // Calculate container class based on Aspect Ratio settings
+    // We strictly follow the aspect ratio to adapt to 16:9 or 9:16
+    // We use w-full to fill the column width, and aspect class to determine height
+    const ratioClass = settings.aspectRatio === "9:16" ? "aspect-[9/16]" : "aspect-video";
+    const mediaContainerClass = `w-full ${ratioClass}`;
 
     const VOICES = [
         { name: "Kore", label: "Kore (女声/平衡)", color: "text-pink-400" },
