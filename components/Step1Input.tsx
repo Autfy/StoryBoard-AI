@@ -4,7 +4,7 @@ import {
   Sparkles, BookOpen, BrainCircuit, Image as ImageIcon, Video, Settings2, Lightbulb, ChevronRight, 
   Monitor, Smartphone, Clapperboard, Moon, Ghost, CloudSun, Box, Zap, Droplets, Feather, 
   Palette, Star, Grid3x3, PenTool, Cuboid, Skull, CircleDot, Aperture, ChevronDown, Wand2,
-  Cpu, Languages
+  Cpu, Languages, RotateCw
 } from "lucide-react";
 // @ts-ignore
 import ReactMarkdown from "react-markdown";
@@ -20,6 +20,10 @@ interface Props {
   setSuggestion: (s: string) => void;
   onAnalyze: () => void;
   isAnalyzingSuggestion: boolean;
+
+  // New Props for Re-generation
+  hasAnalyzed?: boolean;
+  onReAnalyze?: () => void;
 }
 
 // Definition of styles with Icons
@@ -61,7 +65,6 @@ const IMAGE_MODELS: {value: ImageModel; label: string}[] = [
 const VIDEO_MODELS: {value: VideoModel; label: string}[] = [
     { value: "veo-3.1-fast-generate-preview", label: "Veo 3.1 Fast" },
     { value: "veo-3.1-generate-preview", label: "Veo 3.1 HQ" },
-    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
 ];
 
 const LANGUAGES: {value: Language; label: string}[] = [
@@ -71,7 +74,8 @@ const LANGUAGES: {value: Language; label: string}[] = [
 
 export const Step1Input: React.FC<Props> = ({ 
     settings, setSettings, onNext, isLoading, 
-    suggestion, setSuggestion, onAnalyze, isAnalyzingSuggestion 
+    suggestion, setSuggestion, onAnalyze, isAnalyzingSuggestion,
+    hasAnalyzed, onReAnalyze
 }) => {
   
   const [isStyleOpen, setIsStyleOpen] = useState(false);
@@ -401,30 +405,49 @@ export const Step1Input: React.FC<Props> = ({
                 </div>
             </div>
 
-            <div className="pt-6 mt-auto shrink-0 border-t border-slate-800">
-                <button
-                    onClick={onNext}
-                    disabled={!settings.storyText.trim() || isLoading}
-                    className={`w-full py-5 rounded-xl font-bold text-xl flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl ${
-                        !settings.storyText.trim() || isLoading
-                        ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-blue-900/30"
-                    }`}
-                    >
-                    {isLoading ? (
-                        <>
-                        <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        正在分析...
-                        </>
-                    ) : (
-                        <>
-                        下一步 <ChevronRight size={24} />
-                        </>
-                    )}
-                </button>
+            <div className="pt-6 mt-auto shrink-0 border-t border-slate-800 flex flex-col gap-3">
+                {hasAnalyzed ? (
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={onReAnalyze}
+                            disabled={isLoading}
+                            className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30"
+                        >
+                             <RotateCw size={20} /> 重新分析 (覆盖)
+                        </button>
+                         <button
+                            onClick={onNext}
+                            disabled={isLoading}
+                            className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white"
+                        >
+                            下一步 (保留内容) <ChevronRight size={20} />
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        onClick={onNext}
+                        disabled={!settings.storyText.trim() || isLoading}
+                        className={`w-full py-5 rounded-xl font-bold text-xl flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl ${
+                            !settings.storyText.trim() || isLoading
+                            ? "bg-slate-700 text-slate-500 cursor-not-allowed"
+                            : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-blue-900/30"
+                        }`}
+                        >
+                        {isLoading ? (
+                            <>
+                            <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            正在分析...
+                            </>
+                        ) : (
+                            <>
+                            下一步 <ChevronRight size={24} />
+                            </>
+                        )}
+                    </button>
+                )}
             </div>
         </div>
 

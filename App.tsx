@@ -79,7 +79,13 @@ export default function App() {
   };
 
   // Step 1 -> 2: Analyze Story (Main flow)
-  const handleAnalyzeStory = async () => {
+  const handleAnalyzeStory = async (force: boolean = false) => {
+    // If we have characters and not forcing regeneration, just navigate
+    if (!force && state.characters.length > 0) {
+        setState(prev => ({ ...prev, step: 2 }));
+        return;
+    }
+
     setState(prev => ({ ...prev, isAnalyzing: true }));
     setError(null);
     try {
@@ -191,14 +197,15 @@ export default function App() {
       });
   };
 
-  const handleGoToScenes = async () => {
+  const handleGoToScenes = async (force: boolean = false) => {
+    // If we have scenes and not forcing regeneration, just navigate
+    if (!force && state.scenes.length > 0) {
+        setState(prev => ({ ...prev, step: 3 }));
+        return;
+    }
+
     setState(prev => ({ ...prev, isAnalyzing: true }));
     try {
-        // Pass selected text model and language
-        // Only generate scenes if they are empty (to prevent overwriting if user goes back and forth, 
-        // unless you want to force regeneration. For now, we regenerate to ensure consistency with char edits).
-        // Actually, users might want to keep scenes if they just went back to check something.
-        // Let's ALWAYS regenerate for now to capture character changes, but maybe in future cache it.
         const scenes = await breakdownScenes(
             state.settings.storyText, 
             state.settings.sceneCount, 
@@ -460,12 +467,14 @@ export default function App() {
                 <Step1Input 
                     settings={state.settings} 
                     setSettings={(s) => setState(prev => ({ ...prev, settings: s }))} 
-                    onNext={handleAnalyzeStory}
+                    onNext={() => handleAnalyzeStory(false)}
                     isLoading={state.isAnalyzing}
                     suggestion={state.analysisSuggestion}
                     setSuggestion={(s) => setState(prev => ({ ...prev, analysisSuggestion: s }))}
                     onAnalyze={handleAnalyzeSuggestion}
                     isAnalyzingSuggestion={isAnalyzingSuggestion}
+                    hasAnalyzed={state.characters.length > 0}
+                    onReAnalyze={() => handleAnalyzeStory(true)}
                 />
                 )}
 
@@ -476,9 +485,11 @@ export default function App() {
                     updateCharacter={handleUpdateCharacter}
                     generateImage={handleGenerateCharacterImage}
                     generateAllImages={handleGenerateAllCharacterImages}
-                    onNext={handleGoToScenes}
+                    onNext={() => handleGoToScenes(false)}
                     onBack={handleBack}
                     isLoadingNext={state.isAnalyzing}
+                    hasScenes={state.scenes.length > 0}
+                    onRegenerateNext={() => handleGoToScenes(true)}
                 />
                 )}
 

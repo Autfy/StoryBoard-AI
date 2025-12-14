@@ -21,7 +21,7 @@ export type ImageStyle =
 export type TextModel = "gemini-2.5-flash" | "gemini-3-pro-preview";
 export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001";
 export type ImageSize = "1K" | "2K"; // New type for resolution control
-export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview" | "gemini-2.5-flash";
+export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview";
 export type Language = "Chinese" | "English"; // New language type
 
 export interface StorySettings {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Character, StorySettings } from "../types";
-import { RefreshCw, User, Wand2, ChevronRight, Upload, Mic, Zap, ChevronLeft, Download, FileJson, Package } from "lucide-react";
+import { RefreshCw, User, Wand2, ChevronRight, Upload, Mic, Zap, ChevronLeft, Download, FileJson, Package, RotateCw } from "lucide-react";
 // @ts-ignore - Importing from CDN in ESM
 import JSZip from "jszip";
 
@@ -13,9 +13,16 @@ interface Props {
   onNext: () => void;
   onBack: () => void; // New Prop
   isLoadingNext: boolean;
+
+  // New Props for regeneration logic
+  hasScenes?: boolean;
+  onRegenerateNext?: () => void;
 }
 
-export const Step2Characters: React.FC<Props> = ({ characters, settings, updateCharacter, generateImage, generateAllImages, onNext, onBack, isLoadingNext }) => {
+export const Step2Characters: React.FC<Props> = ({ 
+    characters, settings, updateCharacter, generateImage, generateAllImages, 
+    onNext, onBack, isLoadingNext, hasScenes, onRegenerateNext
+}) => {
   
   // Track which character is currently exporting to show loading state
   const [exportingId, setExportingId] = useState<string | null>(null);
@@ -92,7 +99,8 @@ ${char.visualPrompt}
                 speakerStyle: json.speakerStyle,
                 imageUrl: json.imageUrl // This will load the base64 image if present
             });
-            alert(`成功导入角色: ${json.name}`);
+            // REMOVED ALERT as requested
+            // alert(`成功导入角色: ${json.name}`);
         } else {
             alert("文件格式不正确，缺少必要字段。");
         }
@@ -107,7 +115,7 @@ ${char.visualPrompt}
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500 pb-12">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-white">角色设计</h2>
@@ -126,13 +134,34 @@ ${char.visualPrompt}
             >
                 <Zap size={20} /> 一键生成所有
             </button>
-            <button
-            onClick={onNext}
-            disabled={isLoadingNext}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-            {isLoadingNext ? "正在生成分镜..." : "下一步：分镜脚本"} <ChevronRight size={20} />
-            </button>
+            
+            {hasScenes ? (
+               <div className="flex gap-2">
+                    <button
+                        onClick={onRegenerateNext}
+                        disabled={isLoadingNext}
+                        className="px-4 py-3 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl font-bold text-lg flex items-center gap-2 transition-colors"
+                        title="重新生成分镜脚本 (覆盖现有)"
+                    >
+                        <RotateCw size={20} /> <span className="hidden xl:inline">重写分镜</span>
+                    </button>
+                    <button
+                        onClick={onNext}
+                        disabled={isLoadingNext}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                    >
+                        下一步：分镜脚本 <ChevronRight size={20} />
+                    </button>
+               </div>
+            ) : (
+                <button
+                    onClick={onNext}
+                    disabled={isLoadingNext}
+                    className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                    {isLoadingNext ? "正在生成分镜..." : "下一步：分镜脚本"} <ChevronRight size={20} />
+                </button>
+            )}
         </div>
       </div>
 
