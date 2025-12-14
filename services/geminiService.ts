@@ -356,6 +356,12 @@ export const generateSceneVideo = async (
 
   // Use selected video model
   const videoModel = settings.videoModel || 'veo-3.1-fast-generate-preview';
+  
+  // Use selected resolution (default 720p)
+  // Only apply 1080p if explicitly selected and using Veo 3.1
+  const resolution = (settings.videoResolution === "1080p" && videoModel.includes("veo-3.1")) 
+    ? "1080p" 
+    : "720p";
 
   let operation = await ai.models.generateVideos({
     model: videoModel,
@@ -366,7 +372,7 @@ export const generateSceneVideo = async (
     },
     config: {
       numberOfVideos: 1,
-      resolution: '720p',
+      resolution: resolution, 
       aspectRatio: veoRatio
     }
   });

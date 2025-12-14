@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { StorySettings, AspectRatio, ImageStyle, TextModel, ImageModel, VideoModel, ImageSize, Language } from "../types";
+import { StorySettings, AspectRatio, ImageStyle, TextModel, ImageModel, VideoModel, ImageSize, Language, VideoResolution } from "../types";
 import { 
   Sparkles, BookOpen, BrainCircuit, Image as ImageIcon, Video, Settings2, Lightbulb, ChevronRight, 
   Monitor, Smartphone, Clapperboard, Moon, Ghost, CloudSun, Box, Zap, Droplets, Feather, 
@@ -65,6 +65,7 @@ const IMAGE_MODELS: {value: ImageModel; label: string}[] = [
 const VIDEO_MODELS: {value: VideoModel; label: string}[] = [
     { value: "veo-3.1-fast-generate-preview", label: "Veo 3.1 Fast" },
     { value: "veo-3.1-generate-preview", label: "Veo 3.1 HQ" },
+    { value: "veo-2.0-generate-preview", label: "Veo 2.0" },
 ];
 
 const LANGUAGES: {value: Language; label: string}[] = [
@@ -393,13 +394,34 @@ export const Step1Input: React.FC<Props> = ({
                                     <span className="text-xs text-purple-500/50">Videos</span>
                                 </div>
                             </div>
-                            <select
-                                className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-base text-slate-300 outline-none"
-                                value={settings.videoModel}
-                                onChange={(e) => setSettings({...settings, videoModel: e.target.value as VideoModel})}
-                            >
-                                {VIDEO_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                            </select>
+                            
+                             <div className="flex gap-3">
+                                <select
+                                    className="flex-[2] bg-slate-900 border border-slate-600 rounded-lg p-3 text-base text-slate-300 outline-none"
+                                    value={settings.videoModel}
+                                    onChange={(e) => setSettings({...settings, videoModel: e.target.value as VideoModel})}
+                                >
+                                    {VIDEO_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                </select>
+                                
+                                {/* Video Resolution Toggle - Only for Veo 3.1 */}
+                                {settings.videoModel.includes("veo-3.1") && (
+                                     <div className="flex-1 bg-slate-900 border border-slate-600 rounded-lg flex p-1">
+                                        <button 
+                                            onClick={() => setSettings({...settings, videoResolution: "720p"})}
+                                            className={`flex-1 flex items-center justify-center rounded-md text-sm font-bold transition-colors ${settings.videoResolution === "720p" ? "bg-slate-700 text-white" : "text-slate-500 hover:text-slate-300"}`}
+                                        >
+                                            720p
+                                        </button>
+                                        <button 
+                                            onClick={() => setSettings({...settings, videoResolution: "1080p"})}
+                                            className={`flex-1 flex items-center justify-center rounded-md text-sm font-bold transition-colors ${settings.videoResolution === "1080p" ? "bg-purple-600 text-white" : "text-slate-500 hover:text-slate-300"}`}
+                                        >
+                                            1080p
+                                        </button>
+                                    </div>
+                                )}
+                             </div>
                         </div>
                     </div>
                 </div>

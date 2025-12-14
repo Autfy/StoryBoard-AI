@@ -21,7 +21,8 @@ export type ImageStyle =
 export type TextModel = "gemini-2.5-flash" | "gemini-3-pro-preview";
 export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001";
 export type ImageSize = "1K" | "2K"; // New type for resolution control
-export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview";
+export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview" | "veo-2.0-generate-preview";
+export type VideoResolution = "720p" | "1080p"; // New type for Veo 3.1
 export type Language = "Chinese" | "English"; // New language type
 
 export interface StorySettings {
@@ -36,6 +37,7 @@ export interface StorySettings {
   imageModel: ImageModel;
   imageSize: ImageSize; // Added setting
   videoModel: VideoModel;
+  videoResolution: VideoResolution; // Added setting
   
   // Automation Settings
   autoGenerateChars: boolean; // New setting for Step 1 -> 2 transition
@@ -104,6 +106,7 @@ export const INITIAL_SETTINGS: StorySettings = {
   imageModel: "gemini-2.5-flash-image", // Default to 2.5 Flash Image
   imageSize: "1K", // Default to 1K to save cost
   videoModel: "veo-3.1-fast-generate-preview", // Changed default to Veo 3.1 Fast
+  videoResolution: "720p", // Default to 720p
   estimatedCharacterCount: 4, // Default fallback
   autoGenerateChars: true // Default to true
 };
