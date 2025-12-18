@@ -378,13 +378,13 @@ export const generateSceneVideo = async (
   });
 
   // Polling loop
-  // Safety break counter to prevent infinite loops (e.g. max 120s)
+  // Safety break counter to prevent infinite loops (e.g. max 240s -> 4 mins)
   let attempts = 0;
-  const maxAttempts = 24; // 24 * 5s = 2 minutes
+  const maxAttempts = 48; // 48 * 5s = 4 minutes (Doubled from 2 mins)
 
   while (!operation.done) {
     if (attempts >= maxAttempts) {
-        throw new Error("Video generation timed out (2 mins).");
+        throw new Error("Video generation timed out (4 mins).");
     }
     await new Promise(resolve => setTimeout(resolve, 5000));
     // Pass the name property correctly if available, or the whole operation object

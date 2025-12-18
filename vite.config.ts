@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // 加载当前目录下的所有环境变量
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, (process as any).cwd(), '');
   
   // Try to find the key in various common casings
   const apiKey = env.API_KEY || env.api_key || env.ApiKey || process.env.API_KEY;

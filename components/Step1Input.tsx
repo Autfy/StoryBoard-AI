@@ -53,19 +53,21 @@ const RATIOS: { value: AspectRatio; label: string }[] = [
 
 const TEXT_MODELS: {value: TextModel; label: string}[] = [
     { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+    { value: "gemini-3-flash-preview", label: "Gemini 3.0 Flash" },
     { value: "gemini-3-pro-preview", label: "Gemini 3.0 Pro" },
 ];
 
 const IMAGE_MODELS: {value: ImageModel; label: string}[] = [
-    { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Img" },
-    { value: "gemini-3-pro-image-preview", label: "Gemini 3 Pro Img" },
-    { value: "imagen-3.0-generate-001", label: "Imagen 3" },
+    { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Image (Nano Banana)" },
+    { value: "gemini-3-pro-image-preview", label: "Gemini 3.0 Image (Banana Pro)" },
+    { value: "imagen-3.0-generate-001", label: "Imagen 3.0 (Balanced)" },
+    { value: "imagen-4.0-generate-001", label: "Imagen 4.0 (Ultra High-Res)" },
 ];
 
 const VIDEO_MODELS: {value: VideoModel; label: string}[] = [
-    { value: "veo-3.1-fast-generate-preview", label: "Veo 3.1 Fast" },
-    { value: "veo-3.1-generate-preview", label: "Veo 3.1 HQ" },
-    { value: "veo-2.0-generate-preview", label: "Veo 2.0" },
+    { value: "veo-3.1-fast-generate-preview", label: "Veo 3.1 Flash (Instant Speed)" },
+    { value: "veo-3.1-generate-preview", label: "Veo 3.1 Pro (Cinematic HQ)" },
+    { value: "veo-2.0-generate-preview", label: "Veo 2.0 (Legacy)" },
 ];
 
 const LANGUAGES: {value: Language; label: string}[] = [
@@ -97,11 +99,9 @@ export const Step1Input: React.FC<Props> = ({
 
   const estimateResources = () => {
     // Dynamic estimation based on character count
-    // A rough heuristic: 1 char ~= 1.3 tokens for mixed content + base system prompt overhead (~500)
     const textLength = settings.storyText.length;
     const estimatedInputTokens = textLength > 0 ? Math.ceil(textLength * 1.3) + 500 : 0;
     
-    // Use the dynamically estimated character count, or default to 4 if not yet analyzed
     const estCharacters = settings.estimatedCharacterCount;
     const totalImages = settings.sceneCount + estCharacters;
     const maxVideos = settings.sceneCount;

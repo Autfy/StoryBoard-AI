@@ -18,8 +18,8 @@ export type ImageStyle =
   | "黏土定格"
   | "黑白电影";
 
-export type TextModel = "gemini-2.5-flash" | "gemini-3-pro-preview";
-export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001";
+export type TextModel = "gemini-2.5-flash" | "gemini-3-flash-preview" | "gemini-3-pro-preview";
+export type ImageModel = "gemini-3-pro-image-preview" | "gemini-2.5-flash-image" | "imagen-3.0-generate-001" | "imagen-4.0-generate-001";
 export type ImageSize = "1K" | "2K"; // New type for resolution control
 export type VideoModel = "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview" | "veo-2.0-generate-preview";
 export type VideoResolution = "720p" | "1080p"; // New type for Veo 3.1
@@ -102,7 +102,7 @@ export const INITIAL_SETTINGS: StorySettings = {
   aspectRatio: "16:9",
   sceneCount: 8,
   language: "Chinese", // Default language
-  textModel: "gemini-3-pro-preview", // Changed default to 3.0 Pro
+  textModel: "gemini-3-flash-preview", // Changed default to 3.0 Flash for better speed/cost balance
   imageModel: "gemini-2.5-flash-image", // Default to 2.5 Flash Image
   imageSize: "1K", // Default to 1K to save cost
   videoModel: "veo-3.1-fast-generate-preview", // Changed default to Veo 3.1 Fast
