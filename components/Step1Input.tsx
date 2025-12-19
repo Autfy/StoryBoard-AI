@@ -4,7 +4,7 @@ import {
   Sparkles, BookOpen, BrainCircuit, Image as ImageIcon, Video, Settings2, Lightbulb, ChevronRight, 
   Monitor, Smartphone, Clapperboard, Moon, Ghost, CloudSun, Box, Zap, Droplets, Feather, 
   Palette, Star, Grid3x3, PenTool, Cuboid, Skull, CircleDot, Aperture, ChevronDown, Wand2,
-  Cpu, Languages, RotateCw
+  Cpu, Languages, RotateCw, Smile
 } from "lucide-react";
 // @ts-ignore
 import ReactMarkdown from "react-markdown";
@@ -26,16 +26,17 @@ interface Props {
   onReAnalyze?: () => void;
 }
 
-// Definition of styles with Icons
+// Definition of styles with Icons - Reverted to core set + Disney Classic
 const STYLE_OPTIONS: { value: ImageStyle; label: string; icon: React.ElementType, color: string }[] = [
   { value: "电影感", label: "电影感", icon: Clapperboard, color: "text-blue-400" },
   { value: "静谧电影感", label: "静谧电影感", icon: Moon, color: "text-indigo-300" },
-  { value: "动漫", label: "动漫", icon: Ghost, color: "text-pink-400" },
-  { value: "吉卜力风格", label: "吉卜力风格", icon: CloudSun, color: "text-sky-400" },
+  { value: "宫崎骏/吉卜力", label: "宫崎骏/吉卜力", icon: CloudSun, color: "text-sky-400" },
+  { value: "迪士尼经典", label: "迪士尼经典 (2D)", icon: Smile, color: "text-yellow-300" },
   { value: "皮克斯3D", label: "皮克斯3D", icon: Box, color: "text-orange-400" },
+  { value: "动漫", label: "动漫", icon: Ghost, color: "text-pink-400" },
   { value: "赛博朋克", label: "赛博朋克", icon: Zap, color: "text-yellow-400" },
-  { value: "水彩", label: "水彩", icon: Droplets, color: "text-cyan-400" },
   { value: "中国水墨", label: "中国水墨", icon: Feather, color: "text-slate-400" },
+  { value: "水彩", label: "水彩", icon: Droplets, color: "text-cyan-400" },
   { value: "油画", label: "油画", icon: Palette, color: "text-red-400" },
   { value: "美漫风格", label: "美漫风格", icon: Star, color: "text-purple-400" },
   { value: "像素风", label: "像素风", icon: Grid3x3, color: "text-green-400" },
