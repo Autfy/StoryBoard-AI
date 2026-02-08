@@ -173,9 +173,10 @@ export default function App() {
       if (charsToGen.length === 0) return;
 
       // Set loading state first
+      const idsToGenerate = new Set(charsToGen.map(char => char.id));
       setState(prev => ({
           ...prev,
-          characters: prev.characters.map(c => charsToGen.find(ctg => ctg.id === c.id) ? { ...c, isLoading: true } : c)
+          characters: prev.characters.map(c => idsToGenerate.has(c.id) ? { ...c, isLoading: true } : c)
       }));
 
       // Trigger generation
@@ -295,10 +296,13 @@ export default function App() {
 
   const handleGenerateAllSceneImages = async () => {
       const scenesToGen = state.scenes.filter(s => !s.imageUrl && !s.isLoading);
+
+      if (scenesToGen.length === 0) return;
       
+      const idsToGenerate = new Set(scenesToGen.map(scene => scene.id));
       setState(prev => ({
           ...prev,
-          scenes: prev.scenes.map(s => scenesToGen.find(stg => stg.id === s.id) ? { ...s, isLoading: true } : s)
+          scenes: prev.scenes.map(s => idsToGenerate.has(s.id) ? { ...s, isLoading: true } : s)
       }));
 
       // Use a loop for scenes to avoid overwhelming if many
@@ -321,9 +325,10 @@ export default function App() {
           return;
       }
 
+      const idsToGenerate = new Set(scenesToGen.map(scene => scene.id));
       setState(prev => ({
           ...prev,
-          scenes: prev.scenes.map(s => scenesToGen.find(stg => stg.id === s.id) ? { ...s, isVideoLoading: true } : s)
+          scenes: prev.scenes.map(s => idsToGenerate.has(s.id) ? { ...s, isVideoLoading: true } : s)
       }));
 
       // Execute sequentially to avoid rate limits or overwhelming browser
